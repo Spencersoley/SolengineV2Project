@@ -6,7 +6,7 @@
 
 namespace SolengineV2
 {
-    static class ResourceManager
+    class ResourceManager
     {
     public:
         ResourceManager(IOManager* io) : textureCache(io) {}
