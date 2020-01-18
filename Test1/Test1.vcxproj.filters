@@ -12,21 +12,15 @@
     <Filter Include="Source Files\Core">
       <UniqueIdentifier>{b19046ec-1aec-48fa-a684-8f80c3757e1e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Core\Hold">
-      <UniqueIdentifier>{a1192bbe-db39-4750-a44d-f7eb75f169f3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Core\Managers">
       <UniqueIdentifier>{d88ce704-a101-4f7d-ab1c-742b45616279}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Core\Components">
-      <UniqueIdentifier>{4b83acdd-0c3f-46b1-97eb-308ce9ee29b7}</UniqueIdentifier>
+    <Filter Include="Source Files\Core\Data">
+      <UniqueIdentifier>{7b86aca6-aeb0-46ea-be52-170576f6beec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TransformManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerInputManager.h">
       <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
     <ClInclude Include="GraphicsManager.h">
@@ -38,20 +32,23 @@
     <ClInclude Include="CameraManager.h">
       <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="CameraComponent.h">
-      <Filter>Source Files\Core\Components</Filter>
+    <ClInclude Include="VelocityManager.h">
+      <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="ColliderComponent.h">
-      <Filter>Source Files\Core\Components</Filter>
+    <ClInclude Include="LifetimeManager.h">
+      <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsComponent.h">
-      <Filter>Source Files\Core\Components</Filter>
+    <ClInclude Include="BulletCreationData.h">
+      <Filter>Source Files\Core\Data</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerInputComponent.h">
-      <Filter>Source Files\Core\Components</Filter>
+    <ClInclude Include="UserShootManager.h">
+      <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="TransformComponent.h">
-      <Filter>Source Files\Core\Components</Filter>
+    <ClInclude Include="Team.h">
+      <Filter>Source Files\Core\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInputManager.h">
+      <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +57,9 @@
     </ClCompile>
     <ClCompile Include="EntityCreator.h">
       <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoShootManager.h">
+      <Filter>Source Files\Core\Managers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

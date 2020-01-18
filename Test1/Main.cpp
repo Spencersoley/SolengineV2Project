@@ -13,9 +13,13 @@
 #include "TransformManager.h"
 #include "GraphicsManager.h"
 #include "CameraManager.h"
-#include "PlayerInputManager.h"
+#include "UserInputManager.h"
 #include "ColliderManager.h"
 #include "EntityCreator.h"
+#include "VelocityManager.h"
+#include "AutoShootManager.h"
+#include "LifetimeManager.h"
+#include "UserShootManager.h"
 
 int main(int argc, char** argv)
 {
@@ -28,16 +32,21 @@ int main(int argc, char** argv)
 	SolengineV2::ShaderCompiler shaderCompiler(&iOManager);
 	SolengineV2::ShaderProgram shaderProgram;
 	shaderCompiler.CompileShaders(&shaderProgram, "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
-	SolengineV2::TimeManager timeManager(60, true);
-	
+	SolengineV2::TimeManager timeManager(6000, true);
+	SolengineV2::InputManager inputManager;
+
 	EntityCreator creator;
 	TransformManager tManager; // transform
+	VelocityManager vManager(&tManager);
 	CameraManager camManager(&tManager, &shaderProgram, screenHeight, screenWidth); // camera
 	GraphicsManager gManager(&tManager, &camManager); // graphics
-	PlayerInputManager piManager(&tManager, &camManager);//, &creator);
+	UserInputManager piManager(&tManager, &camManager, &inputManager);//, &creator);
+	UserShootManager usManager(&tManager, &camManager, &inputManager);
 	ColliderManager colManager(&tManager);
+	AutoShootManager asManager(&tManager);
+	LifetimeManager ltManager(&tManager);
 
-	creator.Init(&tManager, &camManager, &gManager, &piManager, &colManager, &resourceManager);
+	creator.Init(&tManager, &camManager, &gManager, &piManager, &colManager, &resourceManager, &vManager, &asManager, &usManager, &ltManager);
 
 	creator.CreatePlayer();
 	//creator.Generate();
@@ -47,10 +56,16 @@ int main(int argc, char** argv)
 	while (true)
 	{
 		int adjustedDeltaTicks = timeManager.GetDeltaTicks() * physicsSpeed;
+		
+		inputManager.ProcessInput();
 
-		piManager.Process(adjustedDeltaTicks);
 		creator.Process();
+		piManager.Process(adjustedDeltaTicks);	
+		vManager.Process(adjustedDeltaTicks);
 		colManager.Process();
+		asManager.Process(adjustedDeltaTicks);
+		usManager.Process(adjustedDeltaTicks);
+		ltManager.Process(adjustedDeltaTicks);
 
 
 		tManager.Process();
@@ -62,7 +77,7 @@ int main(int argc, char** argv)
 
 		shaderProgram.Unuse();
 		window.SwapBuffer();
-		timeManager.LimitFPS();
+		timeManager.LimitFPS(true);
 	}
 	return 0;
 }

@@ -3,7 +3,21 @@
 #include <memory>
 #include "TransformManager.h"
 #include "CameraManager.h"
-#include "GraphicsComponent.h"
+
+struct GraphicsComponent
+{
+	GraphicsComponent(std::shared_ptr<TransformComponent> TC, GLuint textID, SolengineV2::Colour col) :
+		textureID(textID),
+		colour(col),
+		redraw(true),
+		transformCo(TC)
+	{}
+
+	std::shared_ptr<TransformComponent> transformCo;
+	SolengineV2::Colour colour;
+	GLuint textureID;
+	bool redraw;
+};
 
 class GraphicsManager
 {
@@ -11,10 +25,15 @@ class GraphicsManager
 	CameraManager* CM;
 
 public:
-	GraphicsManager(TransformManager* TManager, CameraManager* CManager) : TM(TManager), CM(CManager) { }
+	GraphicsManager(TransformManager* TManager, CameraManager* CManager) : TM(TManager), CM(CManager) {}
 
 	std::vector<GraphicsComponent> Graphics{};
-	std::vector<SolengineV2::SpriteBatch*> SpriteBatches{ new SolengineV2::SpriteBatch() };
+	SolengineV2::SpriteBatch SpriteBatch;
+
+	void AddComponent(GLuint64 textID, SolengineV2::Colour col)
+	{
+		Graphics.push_back(GraphicsComponent(TM->GetLastTransform(), textID, col));
+	}
 
 	void Init()
 	{
@@ -26,25 +45,21 @@ public:
 	{
 		int sw = CM->ScreenWidth;
 		int sh = CM->ScreenHeight;
-		TransformComponent* CamTransform = CM->activeT.get();
+		TransformComponent* CamTransform = CM->ActiveT.get();
 		if (CamTransform == nullptr) return;
-		float scale = CM->activeC->Scale;
+		float scale = CM->ActiveCam->Scale;
 
-		SpriteBatches[0]->Begin();
+		SpriteBatch.Begin();
 
 		for (auto it = Graphics.begin(); it != Graphics.end();)
 		{
 			TransformComponent* TC = it->transformCo.get();
 			if (TM->IsToBeDeleted(TC))
 			{
-				std::cout << "GIM-----------USE COUNT: " << it->transformCo.use_count() << std::endl;
 				it = Graphics.erase(it);
-				std::cout << "Graphics size: " << Graphics.size() << std::endl;
 			}
 			else if (isInView(TC, CamTransform, sw, sh, scale))
 			{
-				
-
 				const glm::vec4 uvRect(0.0f, 0.0f, 1.0f, 1.0f);
 				glm::vec4 destRect
 				{
@@ -54,7 +69,7 @@ public:
 					TC->Dims.x
 				};
 
-				SpriteBatches[0]->Draw(destRect, uvRect, it->textureID, 0.0f, it->colour);
+				SpriteBatch.Draw(destRect, uvRect, it->textureID, 0.0f, it->colour);
 				++it;
 			}
 			else
@@ -63,13 +78,8 @@ public:
 			}
 		}
 
-		SpriteBatches[0]->End();
-		SpriteBatches[0]->RenderSpriteBatch();
-	}
-
-	void AddComponent(GLuint64 textID, SolengineV2::Colour col)
-	{
-		Graphics.push_back(GraphicsComponent(SpriteBatches[0], TM->GetLastTransform(), textID, col));
+		SpriteBatch.End();
+		SpriteBatch.RenderSpriteBatch();
 	}
 
 private:
