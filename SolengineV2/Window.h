@@ -12,30 +12,17 @@ namespace SolengineV2
     {
     public:
         Window() : sdlWindow(nullptr), screenHeight(0), screenWidth(0) {};
-        Window(std::string windowName, int sw, int sh, unsigned int currentFlags, Colour col) : Window()
+        Window(std::string windowName, int sw, int sh,  Colour col) : Window()
         {
-            Init(windowName, sw, sh, currentFlags, col);
+            Init(windowName, sw, sh, col);
         }
         ~Window() {};
 
-        int Init(std::string windowName, int sw, int sh, unsigned int currentFlags, Colour col)
+        int Init(std::string windowName, int sw, int sh, Colour col)
         {
             Uint32 flags = SDL_WINDOW_OPENGL;
             screenWidth = sw;
             screenHeight = sh;
-
-            if (currentFlags& INVISIBLE) 
-            {
-                flags |= SDL_WINDOW_HIDDEN;
-            }
-            if (currentFlags& FULLSCREEN) 
-            {
-                flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-            }
-            if (currentFlags& BORDERLESS) 
-            {
-                flags |= SDL_WINDOW_BORDERLESS;
-            }
 
             //Open an SDL window
             sdlWindow = SDL_CreateWindow(windowName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, sw, sh, flags);

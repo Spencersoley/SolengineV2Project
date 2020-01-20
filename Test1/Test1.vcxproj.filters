@@ -20,34 +20,43 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TransformManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="GraphicsManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="ColliderManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="CameraManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="VelocityManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="LifetimeManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
-    </ClInclude>
     <ClInclude Include="BulletCreationData.h">
       <Filter>Source Files\Core\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="UserShootManager.h">
-      <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
     <ClInclude Include="Team.h">
       <Filter>Source Files\Core\Data</Filter>
     </ClInclude>
-    <ClInclude Include="UserInputManager.h">
+    <ClInclude Include="EntityDeleter.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="HandleManager.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ColliderSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="HealthSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="LifetimeSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="TargetableSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInputSystem.h">
+      <Filter>Source Files\Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="VelocitySystem.h">
       <Filter>Source Files\Core\Managers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -58,7 +67,7 @@
     <ClCompile Include="EntityCreator.h">
       <Filter>Source Files\Core</Filter>
     </ClCompile>
-    <ClCompile Include="AutoShootManager.h">
+    <ClCompile Include="ShootSystem.h">
       <Filter>Source Files\Core\Managers</Filter>
     </ClCompile>
   </ItemGroup>

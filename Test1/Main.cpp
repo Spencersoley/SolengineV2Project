@@ -10,22 +10,25 @@
 
 #include <TimeManager.h>
 #include <InputManager.h>
-#include "TransformManager.h"
-#include "GraphicsManager.h"
-#include "CameraManager.h"
-#include "UserInputManager.h"
-#include "ColliderManager.h"
+#include "TransformSystem.h"
+#include "GraphicsSystem.h"
+#include "CameraSystem.h"
+#include "UserInputSystem.h"
+#include "ColliderSystem.h"
 #include "EntityCreator.h"
-#include "VelocityManager.h"
-#include "AutoShootManager.h"
-#include "LifetimeManager.h"
-#include "UserShootManager.h"
+#include "VelocitySystem.h"
+#include "ShootSystem.h"
+#include "LifetimeSystem.h"
+#include "EntityDeleter.h"
+#include "HandleManager.h"
+
+//turn transform components into gameobjects?
 
 int main(int argc, char** argv)
 {
 	SolengineV2::initialiseSDL();
 	int screenHeight = 1000, screenWidth = 1000;
-	SolengineV2::Window window("SolengineV2", screenWidth, screenHeight, 0, SolengineV2::Colour(0, 0, 0, 255));
+	SolengineV2::Window window("SolengineV2", screenWidth, screenHeight, SolengineV2::Colour(0, 0, 0, 255));
 
 	SolengineV2::IOManager iOManager;
 	SolengineV2::ResourceManager resourceManager(&iOManager);
@@ -36,23 +39,49 @@ int main(int argc, char** argv)
 	SolengineV2::InputManager inputManager;
 
 	EntityCreator creator;
-	TransformManager tManager; // transform
-	VelocityManager vManager(&tManager);
-	CameraManager camManager(&tManager, &shaderProgram, screenHeight, screenWidth); // camera
-	GraphicsManager gManager(&tManager, &camManager); // graphics
-	UserInputManager piManager(&tManager, &camManager, &inputManager);//, &creator);
-	UserShootManager usManager(&tManager, &camManager, &inputManager);
-	ColliderManager colManager(&tManager);
-	AutoShootManager asManager(&tManager);
-	LifetimeManager ltManager(&tManager);
+	EntityDeleter deleter;
+	HandleManager handleManager;
+	TransformSystem transformSystem; // transform
+	VelocitySystem velocitySystem(&transformSystem);
+	CameraSystem cameraSystem(&transformSystem, &shaderProgram, screenHeight, screenWidth); // camera
+	GraphicsSystem graphicsSystem(&transformSystem, &cameraSystem); // graphics
+	UserInputManager userInputSystem(&transformSystem, &cameraSystem, &inputManager);//, &creator);
+	HealthSystem healthSystem(&transformSystem);
+	ColliderSystem colliderSystem(&transformSystem, &healthSystem);
+	TargetableSystem targetableSystem(&transformSystem);
+	ShootSystem shootSystem(&transformSystem, &targetableSystem, &cameraSystem, &inputManager);
+	LifetimeSystem lifetimeSystem(&transformSystem);
 
-	creator.Init(&tManager, &camManager, &gManager, &piManager, &colManager, &resourceManager, &vManager, &asManager, &usManager, &ltManager);
+	creator.Init(
+		&transformSystem, 
+		&handleManager, 
+		&cameraSystem, 
+		&graphicsSystem, 
+		&userInputSystem, 
+		&colliderSystem, 
+		&resourceManager, 
+		&velocitySystem, 
+		&shootSystem, 
+		&lifetimeSystem, 
+		&healthSystem, 
+		&targetableSystem);
+	deleter.Init(
+		&transformSystem, 
+		&handleManager, 
+		&cameraSystem, 
+		&graphicsSystem, 
+		&userInputSystem,
+		&colliderSystem, 
+		&velocitySystem, 
+		&shootSystem, 
+		&lifetimeSystem, 
+		&healthSystem, 
+		&targetableSystem);
 
 	creator.CreatePlayer();
 	//creator.Generate();
 
 	float physicsSpeed = 1.0f;
-	gManager.Init();
 	while (true)
 	{
 		int adjustedDeltaTicks = timeManager.GetDeltaTicks() * physicsSpeed;
@@ -60,24 +89,19 @@ int main(int argc, char** argv)
 		inputManager.ProcessInput();
 
 		creator.Process();
-		piManager.Process(adjustedDeltaTicks);	
-		vManager.Process(adjustedDeltaTicks);
-		colManager.Process();
-		asManager.Process(adjustedDeltaTicks);
-		usManager.Process(adjustedDeltaTicks);
-		ltManager.Process(adjustedDeltaTicks);
+		userInputSystem.Process(adjustedDeltaTicks);	
+		velocitySystem.Process(adjustedDeltaTicks);
+		colliderSystem.Process();
+		shootSystem.Process(adjustedDeltaTicks);
+		lifetimeSystem.Process(adjustedDeltaTicks);
 
-
-		tManager.Process();
-		camManager.Process();
-		gManager.Process();
-
-	
-
+		deleter.Process();
+		cameraSystem.Process();
+		graphicsSystem.Process();
 
 		shaderProgram.Unuse();
 		window.SwapBuffer();
-		timeManager.LimitFPS(true);
+		timeManager.LimitFPS();
 	}
 	return 0;
 }
