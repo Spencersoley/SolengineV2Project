@@ -46,9 +46,9 @@ namespace SolengineV2
             }
 
             //Check the OpenGL version
-            std::cout << "***   OpenGL Version: %s   ***" << std::endl<< glGetString(GL_VERSION);
+            std::cout << "***   OpenGL Version: %s   ***" << std::endl << glGetString(GL_VERSION);
 
-            glClearColor((float)col.r/255, (float)col.g/(float)255, (float)col.b/(float)255, (float)col.a/(float)255);
+            glClearColor((float)col.r/(float)255, (float)col.g/(float)255, (float)col.b/(float)255, (float)col.a/(float)255);
 
             //Set VSYNC
             SDL_GL_SetSwapInterval(0);
@@ -59,6 +59,14 @@ namespace SolengineV2
 
             return 0;
         };
+
+        void Clear()
+        {
+            //Set base depth
+            glClearDepth(1.0);
+            //Clear colour and depth buffer
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
 
         void SwapBuffer()
         {

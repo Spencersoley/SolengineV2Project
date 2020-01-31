@@ -6,25 +6,30 @@
 #include <memory>
 #include <iostream>
 #include <map>
+#include "System.h"
 
 enum class TransformState { ACTIVE, INACTIVE, DELETE };
 
-struct TransformComponent
+class TransformComponent
 {
+public:
 	TransformComponent(glm::vec3 pos, glm::vec3 dims) :
 		Pos(pos),
 		Dims(dims),
 		IsUpdated(true),
+		IsSelected(false),
 	    state(TransformState::ACTIVE) {}
-
+private:
+	friend class TransformSystem;
 	TransformState state;
 	glm::vec3 Pos;
 	glm::vec3 Dims;
 	std::map<int, std::shared_ptr<TransformComponent>> Children{};
 	bool IsUpdated;
+	bool IsSelected;
 };
 
-class TransformSystem //Perhaps this is simply a gameobject manager?
+class TransformSystem : public System//Perhaps this is simply a gameobject manager?
 {
 public:
 	std::map<int, std::shared_ptr<TransformComponent>> Transforms{};
@@ -148,5 +153,30 @@ public:
 		{
 			Translate(it->second.get(), transVec);
 		}
+	}
+
+	glm::vec3 GetPos(TransformComponent* TC)
+	{
+		return TC->Pos;
+	};
+
+	glm::vec3 GetDims(TransformComponent* TC)
+	{
+		return TC->Dims;
+	};
+
+	bool GetIsUpdated(TransformComponent* TC)
+	{
+		return TC->IsUpdated;
+	}
+
+	bool GetIsSelected(TransformComponent* TC)
+	{
+		return TC->IsSelected;
+	}
+
+	void SetIsSelected(TransformComponent* TC, bool set)
+	{
+		TC->IsSelected = set;
 	}
 };

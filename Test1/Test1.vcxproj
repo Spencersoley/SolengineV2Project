@@ -156,7 +156,10 @@
   <ItemGroup>
     <ClInclude Include="EntityDeleter.h" />
     <ClInclude Include="HandleManager.h" />
+    <ClInclude Include="SpatialPartitionSystem.h" />
+    <ClInclude Include="System.h" />
     <ClInclude Include="HealthSystem.h" />
+    <ClInclude Include="SelectableSystem.h" />
     <ClInclude Include="TargetableSystem.h" />
     <ClInclude Include="Team.h" />
     <ClInclude Include="BulletCreationData.h" />

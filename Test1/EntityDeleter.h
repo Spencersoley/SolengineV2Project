@@ -16,6 +16,7 @@ public:
 		transformSystem(nullptr),
 		handleManager(nullptr),
 		cameraSystem(nullptr),
+		selectableSystem(nullptr),
 		graphicsSystem(nullptr),
 		userInputSystem(nullptr),
 		colliderSystem(nullptr),
@@ -29,8 +30,9 @@ public:
 	TransformSystem* transformSystem;
 	HandleManager* handleManager;
 	CameraSystem* cameraSystem;
+	SelectableSystem* selectableSystem;
 	GraphicsSystem* graphicsSystem;
-	UserInputManager* userInputSystem;
+	UserInputSystem* userInputSystem;
 	ColliderSystem* colliderSystem;
 	VelocitySystem* velocitySystem;
 	ShootSystem* shootSystem;
@@ -41,8 +43,9 @@ public:
 	void Init(TransformSystem* transform,
 		HandleManager* handle,
 		CameraSystem* camera,
+		SelectableSystem* selectable,
 		GraphicsSystem* graphics,
-		UserInputManager* userinput,
+		UserInputSystem* userinput,
 		ColliderSystem* collider,
 		VelocitySystem* velocity,
 		ShootSystem* shoot,
@@ -53,6 +56,7 @@ public:
 		transformSystem = transform;
 		handleManager = handle;
 		cameraSystem = camera;
+		selectableSystem = selectable;
 		graphicsSystem = graphics;
 		userInputSystem = userinput;
 		colliderSystem = collider;
@@ -79,6 +83,7 @@ public:
 			lifetimeSystem->DeleteComponent(handle);
 			healthSystem->DeleteComponent(handle);
 			targetableSystem->DeleteComponent(handle);
+			selectableSystem->DeleteComponent(handle);
 		}
 
 		transformSystem->handlesToDelete.clear();

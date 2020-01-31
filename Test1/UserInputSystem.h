@@ -3,21 +3,23 @@
 #include "TransformSystem.h"
 #include "CameraSystem.h"
 
-struct UserInputComponent
+class UserInputComponent 
 {
+private:
+	friend class UserInputSystem;
 	UserInputComponent(std::shared_ptr<TransformComponent> transform) : Transform(transform) {}
 
 	std::shared_ptr<TransformComponent> Transform;
 };
 
-class UserInputManager
+class UserInputSystem : public System
 {
 	SolengineV2::InputManager* IM;
 	TransformSystem* TS;
 	CameraSystem* CS;
 
 public:
-	UserInputManager(TransformSystem* ts, CameraSystem* cs, SolengineV2::InputManager* im) :
+	UserInputSystem(TransformSystem* ts, CameraSystem* cs, SolengineV2::InputManager* im) :
 		TS(ts), 
 		CS(cs), 
 		IM(im) {}

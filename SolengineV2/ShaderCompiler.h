@@ -18,7 +18,7 @@ namespace SolengineV2
 		}
 		~ShaderCompiler() {}
 
-		void CompileShaders(ShaderProgram* shaderProgram, const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::vector<std::string>& attributeNames)
+		void CompileShaders(ShaderProgram& shaderProgram, const std::string& vertexShaderFilePath, const std::string& fragmentShaderFilePath, const std::vector<std::string>& attributeNames)
 		{
 			//Creates shader IDs 
 			GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -32,9 +32,9 @@ namespace SolengineV2
 			compileShader(vertexShaderFilePath, vertexShaderID);
 			compileShader(fragmentShaderFilePath, fragmentShaderID);
 
-			shaderProgram->programID = programID;
-			shaderProgram->vertexShaderID = vertexShaderID;
-			shaderProgram->fragmentShaderID = fragmentShaderID;
+			shaderProgram.programID = programID;
+			shaderProgram.vertexShaderID = vertexShaderID;
+			shaderProgram.fragmentShaderID = fragmentShaderID;
 
 			addAttribute(shaderProgram, attributeNames);
 			linkShaders(shaderProgram);
@@ -43,6 +43,7 @@ namespace SolengineV2
 	private:
 		IOManager* iOManager;
 
+		//Parses a file and associates it with an ID
 		void compileShader(const std::string& filePath, GLuint id)
 		{
 			//Extracts from shareFile, to line, formatted into fileContents
@@ -71,18 +72,17 @@ namespace SolengineV2
 			}
 		}
 
-
-		void addAttribute(ShaderProgram* shaderProg, const std::vector<std::string>& attributeName)
+		void addAttribute(ShaderProgram& shaderProg, const std::vector<std::string>& attributeName)
 		{
 			for (size_t i = 0; i < attributeName.size(); i++)
-				glBindAttribLocation(shaderProg->programID, shaderProg->numAttributes++, attributeName[i].c_str());
+				glBindAttribLocation(shaderProg.programID, shaderProg.numAttributes++, attributeName[i].c_str());
 		}
 
-		void linkShaders(const ShaderProgram* shaderProg)
+		void linkShaders(const ShaderProgram& shaderProg)
 		{
-			GLuint programID = shaderProg->programID;
-			GLuint vertexShaderID = shaderProg->vertexShaderID;
-			GLuint  fragmentShaderID = shaderProg->fragmentShaderID;
+			GLuint programID = shaderProg.programID;
+			GLuint vertexShaderID = shaderProg.vertexShaderID;
+			GLuint  fragmentShaderID = shaderProg.fragmentShaderID;
 
 			glAttachShader(programID, vertexShaderID);
 			glAttachShader(programID, fragmentShaderID);
@@ -99,7 +99,6 @@ namespace SolengineV2
 
 				std::vector<char> errorLog(maxLength);
 				glGetProgramInfoLog(programID, maxLength, &maxLength, &errorLog[0]);
-
 
 				glDeleteProgram(programID);
 

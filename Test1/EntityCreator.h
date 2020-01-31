@@ -9,14 +9,17 @@
 #include "LifetimeSystem.h"
 #include "TargetableSystem.h"
 #include "HandleManager.h"
+#include "SelectableSystem.h"
 
 class EntityCreator
 {
 public:
 	EntityCreator() :
+		shaderProgram(nullptr),
 		transformSystem(nullptr),
 		handleManager(nullptr),
 		cameraSystem(nullptr),
+		selectableSystem(nullptr),
 		graphicsSystem(nullptr),
 		userInputSystem(nullptr),
 		colliderSystem(nullptr),
@@ -28,11 +31,16 @@ public:
 		targetableSystem(nullptr)
 	{}
 
+	//std::map<std::string, std::shared_ptr<System>> systemMap;
+
+	SolengineV2::ShaderProgram* shaderProgram;
+
 	TransformSystem* transformSystem;
 	HandleManager* handleManager;
 	CameraSystem* cameraSystem;
+	SelectableSystem* selectableSystem;
 	GraphicsSystem* graphicsSystem;
-	UserInputManager* userInputSystem;
+	UserInputSystem* userInputSystem;
 	ColliderSystem* colliderSystem;
 	SolengineV2::ResourceManager* resourceManager;
 	VelocitySystem* velocitySystem;
@@ -41,11 +49,22 @@ public:
 	HealthSystem* healthSystem;
 	TargetableSystem* targetableSystem;
 
-	void Init(TransformSystem* transform,
+	//void Init(SolengineV2::ShaderProgram* shader,
+	//	HandleManager* handle,
+	//	std::map<std::string, System>
+	//)
+	//{
+	//	shaderProgram = shader;
+	//	handleManager = handle;
+	//}
+
+	void Init(SolengineV2::ShaderProgram* shader,
+		TransformSystem* transform,
 		HandleManager* handle,
 		CameraSystem* camera,
+		SelectableSystem* selectable,
 		GraphicsSystem* graphics,
-		UserInputManager* userinput,
+		UserInputSystem* userinput,
 		ColliderSystem* collider,
 		SolengineV2::ResourceManager* rm,
 		VelocitySystem* velocity,
@@ -54,9 +73,11 @@ public:
 		HealthSystem* health,
 		TargetableSystem* targetable)
 	{
+		shaderProgram = shader;
 		transformSystem = transform;
 		handleManager = handle;
 		cameraSystem = camera;
+		selectableSystem = selectable;
 		graphicsSystem = graphics;
 		userInputSystem = userinput;
 		colliderSystem = collider;
@@ -75,17 +96,21 @@ public:
 		Team team = Team::NONE;
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, { 0.0f, 0.0f, 5.0f }, { 20.0f, 20.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 0, 255));
 		cameraSystem->AddComponent(ID);
 		userInputSystem->AddComponent(ID);
-		colliderSystem->AddComponent(ID);
+		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Square.png").ID, SolengineV2::Colour(0, 255, 0, 255));
+		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR, Team::NONE);
+		targetableSystem->AddComponent(ID, Team::NONE);
 		shootSystem->AddComponent(ID, ShootType::PLAYER, Team::NONE);
-		targetableSystem->AddComponent(ID, team);
 
 		int childID = handleManager->NewHandle();
 		transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
-		graphicsSystem->AddComponent(childID, GraphicsType::HEALTHBAR, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
+		graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
 		healthSystem->AddComponent(ID, childID);
+
+		int UIID = handleManager->NewHandle();
+		transformSystem->AddComponent(UIID, { 140.0f, 40.0f, 5.0f }, { 100.0f, 100.0f, 0.0f });
+		graphicsSystem->AddComponent(UIID, shaderProgram, GraphicsType::UI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(222, 150, 0, 255));
 	}
 
 	void Generate()
@@ -109,15 +134,16 @@ public:
 		int ID = handleManager->NewHandle();
 		Team team = Team::ONE;
 		transformSystem->AddComponent(ID, pos, { 20.0f, 20.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Square.png").ID, SolengineV2::Colour(255, 0, 255, 255));
+		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Square.png").ID, SolengineV2::Colour(255, 0, 255, 255));
 		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR, team);
 		shootSystem->AddComponent(ID, ShootType::AUTO, team);
 		targetableSystem->AddComponent(ID, team);
+		selectableSystem->AddComponent(ID);
 		//cameraSystem->AddComponent(ID);
 
 		int childID = handleManager->NewHandle();
 		transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
-		graphicsSystem->AddComponent(childID, GraphicsType::HEALTHBAR, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
+		graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
 		healthSystem->AddComponent(ID, childID);
 	
 		//piManager->AddComponent();
@@ -127,7 +153,7 @@ public:
 	{
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 1920.0f, 1080.0f, -10.0f });
-		graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/starf.png").ID, SolengineV2::Colour(255, 255, 255, 100));
+		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/starf.png").ID, SolengineV2::Colour(255, 255, 255, 100));
 	}
 
 	void CreateBlueCircle(glm::vec3 pos)
@@ -135,15 +161,16 @@ public:
 		Team team = Team::TWO;
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 20.0f, 20.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 255, 255));
+		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 255, 255));
 		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR, team);
 		//healthManager->AddComponent(id);
-		shootSystem->AddComponent(ID, ShootType::AUTO, team);
+		shootSystem->AddComponent(ID, ShootType::PLAYER, team);
 		targetableSystem->AddComponent(ID, team);
+		selectableSystem->AddComponent(ID);
 
 		int childID = handleManager->NewHandle();
 		transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });//, pos, { 10.0f, 10.0f, 0.0f });
-		graphicsSystem->AddComponent(childID, GraphicsType::HEALTHBAR, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
+		graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
 		healthSystem->AddComponent(ID, childID);	
 	}
 
@@ -153,7 +180,7 @@ public:
 		{
 			int ID = handleManager->NewHandle();
 			transformSystem->AddComponent(ID, b.pos, { 10.0f, 10.0f, 0.0f });
-			graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 0, 0, 255));
+			graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 0, 0, 255));
 			colliderSystem->AddComponent(ID, ColliderType::POINT, b.team);
 			velocitySystem->AddComponent(ID, b.vel, b.dir);
 			lifetimeSystem->AddComponent(ID, 5000);
@@ -166,9 +193,14 @@ public:
 		{
 			int ID = handleManager->NewHandle();
 			transformSystem->AddComponent(ID, { p.x, p.y, 0.0f }, { 15.0f, 15.0f, 15.0f });
-			graphicsSystem->AddComponent(ID, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 0, 255));
+			graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 0, 255));
 			colliderSystem->AddComponent(ID);
 		}
+	}
+
+	void CreateSelectedIcon(std::vector<int>& handles)
+	{
+
 	}
 
 	void Process() //simple concept for generating new entities in game.

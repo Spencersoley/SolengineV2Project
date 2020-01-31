@@ -2,8 +2,10 @@
 #include <map>
 #include "TransformSystem.h"
 
-struct HealthComponent
+class HealthComponent
 {
+private:
+	friend class HealthSystem;
 	HealthComponent(std::shared_ptr<TransformComponent> healthbarTransform, int health) : CurrentHealth(health), MaximumHealth(health), HealthbarTransform(healthbarTransform) {}
 
 	std::shared_ptr<TransformComponent> HealthbarTransform; //should be the transform of the child entity
@@ -13,7 +15,7 @@ struct HealthComponent
 	int RegenerationRate = 1.0f;
 };
 
-class HealthSystem
+class HealthSystem : public System
 {
 	TransformSystem* TS;
 

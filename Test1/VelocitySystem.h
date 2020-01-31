@@ -2,8 +2,10 @@
 #include <vector>
 #include "TransformSystem.h"
 
-struct VelocityComponent
+class VelocityComponent
 {
+private:
+	friend class VelocitySystem;
 	VelocityComponent(std::shared_ptr<TransformComponent> transform, float velocity, glm::vec2 direction) : Transform(transform), Velocity(velocity), Direction(direction) {}
 
 	std::shared_ptr<TransformComponent> Transform;
@@ -11,7 +13,7 @@ struct VelocityComponent
 	glm::vec2 Direction;
 };
 
-class VelocitySystem
+class VelocitySystem : public System
 {
 	TransformSystem* TS;
 

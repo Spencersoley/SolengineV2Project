@@ -1,19 +1,21 @@
 #pragma once
 #include "TransformSystem.h"
 
-struct LifetimeComponent
+class LifetimeComponent
 {
+private:
+	friend class LifetimeSystem;
 	LifetimeComponent(int lifetime) :  Lifetime(lifetime) {}
 
 	int Lifetime;
 };
 
-class LifetimeSystem
+class LifetimeSystem : public System
 {
-	TransformSystem* TM;
+	TransformSystem* TS;
 
 public:
-	LifetimeSystem(TransformSystem* transformManager) : TM(transformManager) {}
+	LifetimeSystem(TransformSystem* transformManager) : TS(transformManager) {}
 	std::map<int, LifetimeComponent> Lifetimes{};
 
 	void AddComponent(int handle, int lifetime)
@@ -29,7 +31,7 @@ public:
 
 			if (it->second.Lifetime <= 0)
 			{
-				TM->SetToBeDeleted(it->first);
+				TS->SetToBeDeleted(it->first);
 			}
 		}
 	}

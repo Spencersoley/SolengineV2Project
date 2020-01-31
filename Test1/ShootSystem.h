@@ -9,8 +9,10 @@
 
 enum class ShootType { PLAYER, AUTO };
 
-struct ShootComponent
+class ShootComponent : public System
 {
+private:
+	friend class ShootSystem;
 	ShootComponent(std::shared_ptr<TransformComponent> transform, ShootType shootType, Team team) :
 		Transform(transform),
 		ShootType(shootType),
@@ -65,8 +67,8 @@ public:
 			else
 			{
 				ShootType st = it->second.ShootType;
-				glm::vec3 pos = it->second.Transform->Pos;
-				glm::vec3 dims = it->second.Transform->Dims;
+				glm::vec3 pos = TS->GetPos(it->second.Transform.get());
+				glm::vec3 dims = TS->GetDims(it->second.Transform.get());
 				Team team = it->second.Team;
 
 				if (st == ShootType::PLAYER)
@@ -112,9 +114,9 @@ private:
 		float closestDist = MAX_DIST;
 		for (const auto& targetable : TGS->Targetables)
 		{
-			if (targetable.second.Team != team)
+			if (TGS->GetTeam(targetable.second) != team)
 			{
-				glm::vec3 tarPos = targetable.second.Transform->Pos;
+				glm::vec3 tarPos = TGS->GetPos(targetable.second);
 
 				float xDist = tarPos.x - pos.x;
 				float yDist = tarPos.y - pos.y;
