@@ -9,14 +9,78 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="Source Files\Core">
+      <UniqueIdentifier>{b19046ec-1aec-48fa-a684-8f80c3757e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\Data">
+      <UniqueIdentifier>{7b86aca6-aeb0-46ea-be52-170576f6beec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\System">
+      <UniqueIdentifier>{d88ce704-a101-4f7d-ab1c-742b45616279}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\System\Graphics">
+      <UniqueIdentifier>{fa5e3848-7645-4f49-9591-79adefd10482}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\System\Physics">
+      <UniqueIdentifier>{9522bd1f-eb76-4a72-b4e7-83845a19032f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\System\Controller">
+      <UniqueIdentifier>{e7ef21fb-077b-4b31-9a4b-1624f0b723ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\System\AI">
+      <UniqueIdentifier>{016c1e76-d640-4fcd-872e-e11caca526ed}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EvolutionSim.cpp">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="BulletCreationData.h">
+      <Filter>Source Files\Core\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Team.h">
+      <Filter>Source Files\Core\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="HandleManager.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityManager.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraSystem.h">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsSystem.h">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="ColliderSystem.h">
+      <Filter>Source Files\Core\System\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="VelocitySystem.h">
+      <Filter>Source Files\Core\System\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInputSystem.h">
+      <Filter>Source Files\Core\System\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectableSystem.h">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="FoodSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="LifetimeSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="HealthSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformSystem.h">
+      <Filter>Source Files\Core\System\Physics</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvivalSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
