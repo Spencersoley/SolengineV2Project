@@ -13,7 +13,7 @@ namespace SolengineV2
 	{
 	public:
 		//Turns file into buffer for image loading
-		std::vector<unsigned char> ReadFileToBuffer(std::string filePath)
+		std::vector<unsigned char> ReadFileToVectorBuffer(std::string filePath)
 		{
 			std::vector<unsigned char> buffer;
 
@@ -21,8 +21,7 @@ namespace SolengineV2
 			if (file.fail())
 			{
 				perror(filePath.c_str());
-				std::cout << "Failed to load file to buffer!";
-				return buffer;
+				throw std::invalid_argument("Failed to load file buffer");
 			}
 
 			//seek to the end

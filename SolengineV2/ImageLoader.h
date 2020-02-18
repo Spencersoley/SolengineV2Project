@@ -19,7 +19,7 @@ namespace SolengineV2
 		Texture LoadPNG(std::string filePath)
 		{
 			Texture texture = {};
-			std::vector<unsigned char> bufferedPNG = iOManager->ReadFileToBuffer(filePath);
+			std::vector<unsigned char> bufferedPNG = iOManager->ReadFileToVectorBuffer(filePath);
 			std::vector<unsigned char> decodedPNG;
 			unsigned long width, height;
 		

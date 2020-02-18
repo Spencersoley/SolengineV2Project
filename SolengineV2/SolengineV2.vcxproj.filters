@@ -48,9 +48,6 @@
     <ClInclude Include="TextureCache.h">
       <Filter>Source Files\Core\Textures</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderCompiler.h">
-      <Filter>Source Files\Core\Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="ShaderProgram.h">
       <Filter>Source Files\Core\Shaders</Filter>
     </ClInclude>
@@ -59,9 +56,6 @@
     </ClInclude>
     <ClInclude Include="GameState.h">
       <Filter>Source Files\Core\GameLoop</Filter>
-    </ClInclude>
-    <ClInclude Include="SDL.h">
-      <Filter>Source Files\Core\SDL</Filter>
     </ClInclude>
     <ClInclude Include="Window.h">
       <Filter>Source Files\Core\SDL</Filter>
@@ -78,5 +72,19 @@
     <ClInclude Include="Glyph.h">
       <Filter>Source Files\Core\Sprites</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>Source Files\Core\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Source Files\Core\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="SDLInit.h">
+      <Filter>Source Files\Core\SDL</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ShaderFactory.h">
+      <Filter>Source Files\Core\Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
