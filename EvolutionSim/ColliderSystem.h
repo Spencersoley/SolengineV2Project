@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "Team.h"
 #include "TransformSystem.h"
 #include "SurvivalSystem.h"
 #include <glm\geometric.hpp>

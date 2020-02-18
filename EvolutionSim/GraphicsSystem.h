@@ -3,30 +3,35 @@
 #include <memory>
 #include "TransformSystem.h"
 #include "CameraSystem.h"
+#include <Font.h>
 
 class GraphicsComponent
 {
 private:
 	friend class GraphicsSystem;
-	GraphicsComponent(std::shared_ptr<TransformComponent> transform, SolengineV2::ShaderProgram* shaderProgram, GLuint textureID, SolengineV2::Colour colour) 
+	GraphicsComponent(
+		std::shared_ptr<TransformComponent> _transform,
+		std::shared_ptr<SolengineV2::ShaderProgram> _shaderProgram,
+		GLuint _textureID,
+		SolengineV2::Colour _colour)
 		:
-		transform(transform),
-		ShaderProgram(shaderProgram),
-		textureID(textureID),
-		Colour(colour),
+		transform(_transform),
+		shaderProgram(_shaderProgram),
+		textureID(_textureID),
+		colour(_colour),
 		redraw(true),
 		IsVisible(true)
 	{}
 
 	std::shared_ptr<TransformComponent> transform;
-	SolengineV2::ShaderProgram* ShaderProgram;
-	SolengineV2::Colour Colour;
+	std::shared_ptr<SolengineV2::ShaderProgram> shaderProgram;
+	SolengineV2::Colour colour;
 	GLuint textureID;
 	bool redraw;
 	bool IsVisible;
 };
 
-enum class GraphicsType : unsigned int { GENERAL = 0, WORLDUI = 1 , UI = 2 };
+enum class GraphicsType : unsigned int { GENERAL = 0, WORLDUI = 1, UI = 2 };
 
 class GraphicsSystem
 {
@@ -45,18 +50,30 @@ public:
 		:
 		TS(ts),
 		CS(cs),
-		selectionBoxTextureID(0) 
-	{}
+		selectionBoxTextureID(0)
+	{
+		font1 = new SolengineV2::Font("Fonts/Hind/Hind-Medium.ttf", 32);
+		sb = font1->GetSpriteBatch();
+	}
+	~GraphicsSystem() 
+	{
+		delete font1;
+		delete sb;
+	}
 
-	void AddComponent(int handle, SolengineV2::ShaderProgram* shaderProgram, GraphicsType graphicsType, GLuint64 textID, SolengineV2::Colour col)
+
+	void AddComponent(int handle, std::shared_ptr<SolengineV2::ShaderProgram> shaderProgram, GraphicsType graphicsType, GLuint64 textID, SolengineV2::Colour col)
 	{
 		switch (graphicsType)
 		{
-		    case GraphicsType::GENERAL: WorldGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
-		    case GraphicsType::WORLDUI: WorldUIGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
-		    case GraphicsType::UI: UIGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
+		case GraphicsType::GENERAL: WorldGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
+		case GraphicsType::WORLDUI: WorldUIGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
+		case GraphicsType::UI: UIGraphics.try_emplace(handle, GraphicsComponent(TS->GetLast(), shaderProgram, textID, col)); break;
 		}
 	}
+
+	SolengineV2::Font* font1;
+	SolengineV2::SpriteBatch* sb;
 
 	void SetSelectionBoxTextureID(GLint sbtID)
 	{
@@ -68,15 +85,15 @@ public:
 		auto it = WorldGraphics.find(handle);
 		if (it != WorldGraphics.end())
 		{
-			it->second.Colour = col;
+			it->second.colour = col;
 		}
 	}
 
-	void Process() //How do we solve draw order?
+	void Process()
 	{
 		int sw = CS->GetScreenWidth();
 		int sh = CS->GetScreenHeight();
-		TransformComponent* CamTransform = CS->ActiveT.get();
+		TransformComponent* CamTransform = CS->cameraTransform.get();
 		if (CamTransform == nullptr) return;
 		float scale = CS->GetActiveCamScale();
 
@@ -88,9 +105,15 @@ public:
 
 		UIBatch.Begin();
 		CS->ProcessUICamera();
-		renderUIComponents(UIGraphics, sw, sh);
+		//renderUIComponents(UIGraphics, sw, sh);
 		UIBatch.End();
 		UIBatch.RenderSpriteBatch();
+
+		sb = font1->GetSpriteBatch();
+		sb->Begin();
+		font1->Draw("weewoo", { -0.1f, 0.0f }, { 0.5f, 0.5f }, 0.0f, { 0, 255, 255, 255 });
+		sb->End();
+		sb->RenderSpriteBatch();
 
 		CS->UnuseShader();
 	}
@@ -128,26 +151,28 @@ private:
 				dims.y
 			};
 
-			UIBatch.Draw(destRect, uvRect, it->second.textureID, 0.0f, it->second.Colour);
+			UIBatch.Draw(destRect, uvRect, it->second.textureID, 0.0f, it->second.colour);
 		}
 	}
 
 	void renderWorldComponents(std::map<int, GraphicsComponent> graphics, TransformComponent* CamTransform, int sw, int sh, float scale)
 	{
-		SolengineV2::ShaderProgram* sp = nullptr;
+		std::shared_ptr<SolengineV2::ShaderProgram> sp = nullptr;
 
 		for (auto it = graphics.begin(); it != graphics.end(); ++it)
 		{
 			TransformComponent* TC = it->second.transform.get();
 			if (isInView(TC, CamTransform, sw, sh, scale) && it->second.IsVisible)
 			{
-				if (it->second.ShaderProgram != sp)
+				if (it->second.shaderProgram != sp)
 				{
-					sp = it->second.ShaderProgram;
+					sp = it->second.shaderProgram;
 					CS->ProcessWorldCamera(sp);
 				}
+
 				glm::vec3 pos = TS->GetPos(TC);
 				glm::vec3 dims = TS->GetDims(TC);
+
 				const glm::vec4 uvRect(0.0f, 0.0f, 1.0f, 1.0f);
 				glm::vec4 destRect
 				{
@@ -157,6 +182,7 @@ private:
 				dims.y
 				};
 
+				// for drawing selection box
 				if (TS->GetIsSelected(TC))
 				{
 					glm::vec4 dr
@@ -170,11 +196,12 @@ private:
 					SpriteBatch.Draw(dr, uvRect, selectionBoxTextureID, 0.0f, SolengineV2::Colour{ 255, 255, 255, 255 });
 				}
 
-				SpriteBatch.Draw(destRect, uvRect, it->second.textureID, 0.0f, it->second.Colour);
+				SpriteBatch.Draw(destRect, uvRect, it->second.textureID, 0.0f, it->second.colour);
 			}
 		}
 	}
 
+	//frustum culling
 	bool isInView(TransformComponent* obj, TransformComponent* cam, int sw, int sh, float scale)
 	{
 		glm::vec3 pos = TS->GetPos(obj);

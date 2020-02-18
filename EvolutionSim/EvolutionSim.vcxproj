@@ -99,7 +99,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;glew32.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -129,7 +129,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;opengl32.lib;glew32.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,17 +153,17 @@
     <ClCompile Include="SurvivalSystem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DuplicationData.h" />
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="FoodSystem.h" />
     <ClInclude Include="HandleManager.h" />
+    <ClInclude Include="MakeSharedEnabler.h" />
     <ClInclude Include="HealthSystem.h" />
     <ClInclude Include="SelectableSystem.h" />
-    <ClInclude Include="Team.h" />
-    <ClInclude Include="BulletCreationData.h" />
     <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="ColliderSystem.h" />
     <ClInclude Include="GraphicsSystem.h" />
-    <ClInclude Include="LifetimeSystem.h" />
+    <ClInclude Include="StatSheet.h" />
     <ClInclude Include="UserInputSystem.h" />
     <ClInclude Include="TransformSystem.h" />
     <ClInclude Include="VelocitySystem.h" />

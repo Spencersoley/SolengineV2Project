@@ -37,8 +37,6 @@ public:
 		graphicsSystem(gs)
 	{}
 
-
-
 	std::vector<glm::vec2> newpos;
 
 	bool shouldGenerateFood = false; // for testing purposes

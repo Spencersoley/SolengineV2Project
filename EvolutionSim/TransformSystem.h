@@ -6,6 +6,7 @@
 #include <memory>
 #include <iostream>
 #include <map>
+#include "MakeSharedEnabler.h"
 
 enum class TransformState : unsigned int { ACTIVE, INACTIVE, DELETE };
 
@@ -45,19 +46,9 @@ public:
 	std::vector<int>::iterator GetHandlesToDeleteEnd() { return handlesToDelete.end(); }
 	void ClearHandles() { handlesToDelete.clear(); }
 
-	std::shared_ptr<TransformComponent> makeSharedTransformComponent(glm::vec3 a, glm::vec3 b) // this allows use to make shared pointers despite the constructor being private
-	{
-		struct make_shared_enabler : public TransformComponent
-		{
-			make_shared_enabler(glm::vec3 pos, glm::vec3 dims) : TransformComponent(pos, dims) {}
-		};
-
-		return std::make_shared<make_shared_enabler>(a, b);
-	}
-
 	void AddComponent(int handle, glm::vec3 pos, glm::vec3 dims)
 	{
-		std::shared_ptr<TransformComponent> temp = makeSharedTransformComponent(pos, dims);
+		std::shared_ptr<TransformComponent> temp (new TransformComponent(pos, dims));// makeSharedComponent<TransformComponent>(pos, dims);
 		transformMap.insert({ handle, temp }); //prefer insertion for shared_ptrs
 		lastTransform = temp;
 	}
@@ -73,7 +64,7 @@ public:
 		{
 			if (i->first == parentHandle)
 			{
-			    std::shared_ptr<TransformComponent> temp = makeSharedTransformComponent(i->second->Pos + pos, dims);
+			    std::shared_ptr<TransformComponent> temp (new TransformComponent (i->second->Pos + pos, dims));
 				i->second->Children.insert(std::pair<int, std::shared_ptr<TransformComponent>>(childHandle, temp));
 				lastTransform = temp;
 				return true;

@@ -30,14 +30,11 @@
     <Filter Include="Source Files\Core\System\AI">
       <UniqueIdentifier>{016c1e76-d640-4fcd-872e-e11caca526ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Helper">
+      <UniqueIdentifier>{13e602be-8c2d-444b-9dde-5fd5be7cedee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BulletCreationData.h">
-      <Filter>Source Files\Core\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Team.h">
-      <Filter>Source Files\Core\Data</Filter>
-    </ClInclude>
     <ClInclude Include="HandleManager.h">
       <Filter>Source Files\Core</Filter>
     </ClInclude>
@@ -65,14 +62,20 @@
     <ClInclude Include="FoodSystem.h">
       <Filter>Source Files\Core\System\AI</Filter>
     </ClInclude>
-    <ClInclude Include="LifetimeSystem.h">
-      <Filter>Source Files\Core\System\AI</Filter>
-    </ClInclude>
     <ClInclude Include="HealthSystem.h">
       <Filter>Source Files\Core\System\AI</Filter>
     </ClInclude>
     <ClInclude Include="TransformSystem.h">
       <Filter>Source Files\Core\System\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="DuplicationData.h">
+      <Filter>Source Files\Core\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="StatSheet.h">
+      <Filter>Source Files\Core\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="MakeSharedEnabler.h">
+      <Filter>Source Files\Helper</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

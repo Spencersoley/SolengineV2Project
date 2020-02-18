@@ -5,10 +5,10 @@
 #include "ColliderSystem.h"
 #include "UserInputSystem.h"
 #include "VelocitySystem.h"
-#include "LifetimeSystem.h"
 #include "TargetableSystem.h"
 #include "HandleManager.h"
 #include "SelectableSystem.h"
+#include "DuplicationData.h"
 
 // implement creator and deleter as a single class
 class EntityManager
@@ -16,7 +16,7 @@ class EntityManager
 public:
 	EntityManager()
 		:
-		shaderProgram(nullptr),
+		defaultShader(nullptr),
 		resourceManager(nullptr),
 		transformSystem(nullptr),
 		handleManager(nullptr),
@@ -26,13 +26,12 @@ public:
 		userInputSystem(nullptr),
 		colliderSystem(nullptr),
 		velocitySystem(nullptr),
-		lifetimeSystem(nullptr),
 		healthSystem(nullptr),
 		foodSystem(nullptr),
 		survivalSystem(nullptr)
 	{}
 
-	void Init(SolengineV2::ShaderProgram* shader,
+	void Init(std::shared_ptr<SolengineV2::ShaderProgram> _defaultShader,
 		SolengineV2::ResourceManager* rm,
 		TransformSystem* transform,
 		HandleManager* handle,
@@ -42,13 +41,12 @@ public:
 		UserInputSystem* userinput,
 		ColliderSystem* collider,
 		VelocitySystem* velocity,
-		LifetimeSystem* lifetime,
 		HealthSystem* health,
 		FoodSystem* food,
 		SurvivalSystem* survival
 	)
 	{
-		shaderProgram = shader;
+		defaultShader = _defaultShader;
 		resourceManager = rm;
 
 		transformSystem = transform;
@@ -59,7 +57,6 @@ public:
 		userInputSystem = userinput;
 		colliderSystem = collider;
 		velocitySystem = velocity;
-		lifetimeSystem = lifetime;
 		healthSystem = health;
 		foodSystem = food;
 		survivalSystem = survival;
@@ -67,6 +64,13 @@ public:
 		srand(time(NULL));
 
 		createFloor({ 0.0f, 0.0f, 0.0f });
+
+		for (int i = 0; i < 5; i++)
+		{
+			createUnit(randomPosOutsideCircle(400.0f), {});
+		}	
+		
+		generateFood(10);
 
 		createPlayer();
 	}
@@ -78,12 +82,10 @@ public:
 			int handle = (*it);
 			handleManager->DeleteHandle(handle);
 
-			cameraSystem->DeleteComponent(handle);
 			graphicsSystem->DeleteComponent(handle);
 			userInputSystem->DeleteComponent(handle);
 			colliderSystem->DeleteComponent(handle);
 			velocitySystem->DeleteComponent(handle);
-			lifetimeSystem->DeleteComponent(handle);
 			healthSystem->DeleteComponent(handle);
 			selectableSystem->DeleteComponent(handle);
 			foodSystem->DeleteComponent(handle);
@@ -92,29 +94,16 @@ public:
 
 		transformSystem->ClearHandles();
 
-	/*	if (userInputSystem->shouldGenerateFood)
+		if (survivalSystem->DuplicationDataVec.size())
 		{
-			generateFood();
-			userInputSystem->shouldGenerateFood = false;
-		}
-
-
-		if (userInputSystem->shouldGenerateUnits)
-		{
-			generateUnits();
-			userInputSystem->shouldGenerateUnits = false;
-		}*/
-
-		if (survivalSystem->shouldDuplicate)
-		{
-			generateUnits(survivalSystem->shouldDuplicate);
-			generateFood(10);
-			survivalSystem->shouldDuplicate = 0;
+			generateUnits(survivalSystem->DuplicationDataVec);
+			generateFood(5);
+			survivalSystem->DuplicationDataVec.clear();
 		}
 	}
 
 private:
-	SolengineV2::ShaderProgram* shaderProgram;
+	std::shared_ptr<SolengineV2::ShaderProgram> defaultShader;
 	SolengineV2::ResourceManager* resourceManager;
 
 	TransformSystem* transformSystem;
@@ -125,7 +114,6 @@ private:
 	UserInputSystem* userInputSystem;
 	ColliderSystem* colliderSystem;
 	VelocitySystem* velocitySystem;
-	LifetimeSystem* lifetimeSystem;
 	HealthSystem* healthSystem;
 	FoodSystem* foodSystem;
 	SurvivalSystem* survivalSystem;
@@ -138,11 +126,22 @@ private:
 		}
 	}
 
+	void generateUnits(const std::vector<DuplicationData>& dataVec) const
+	{
+		for (const auto& data : dataVec)
+		{
+			glm::vec3 newPos = data.pos;
+			data.pos.x < 0 ? newPos.x += 0.01f : newPos.x -= 0.01f; // adjust
+			data.pos.y < 0 ? newPos.y += 0.01f : newPos.y += 0.01f; // adjust
+			createUnit(newPos, data.stats);
+		}
+	}
+
 	void generateUnits(int num)
 	{
 		for (int i = 0; i < num; i++)
 		{
-			createUnit(randomPosOutsideCircle(400.0f));
+			createUnit(randomPosOutsideCircle(400.0f), {});
 		}
 	}
 
@@ -170,60 +169,70 @@ private:
 	////////////////////////////////////////
 	///	     		prefabs				////
 	////////////////////////////////////////
-	void createPlayer()
+
+	// STEPS FOR PREFAB CREATION
+	// 0 - Create prefab function: void CreateX() { ... };, within which you put the following:
+	// 1 - (VITAL) Create handle: int ID = handleManager->NewHandle();
+	// 2 - (VITAL) Add transform component: transformSystem->AddComponent(ID, position, dimensions);
+	// 3 - (OPTIONAL) Add desired components from system: 
+	// eg, for control with user input : userInputSystem->AddComponent(ID);
+	// or for a collider : colliderSystem->AddComponent(ID, ColliderType::CIRCULAR);
+	// or for graphics   : AddComponent(UIID, shaderProgram, GraphicsType::UI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(222, 150, 0, 255));
+	// 4 - (OPTIONAL) Add another prefab as a child to this prefab, with the potential for shared components a
+	// call the function to instantiate a the new entity with the determined characteristics
+	
+	
+	void createPlayer() const
 	{
-		Team team = Team::NONE;
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, { 0.0f, 0.0f, 5.0f }, { 20.0f, 20.0f, 0.0f });
-		cameraSystem->AddComponent(ID);
+		cameraSystem->SetCamera();
 		userInputSystem->AddComponent(ID);
-		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 0, 255));
-		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR);
+		//graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(0, 255, 0, 255));
+		//colliderSystem->AddComponent(ID, ColliderType::CIRCULAR);
 
-		int childID = handleManager->NewHandle();
-		transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
-		graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
-		healthSystem->AddComponent(ID, childID);
+		//int childID = handleManager->NewHandle();
+		//transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
+		//graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
+		//healthSystem->AddComponent(ID, childID);
 
-		int UIID = handleManager->NewHandle();
-		transformSystem->AddComponent(UIID, { 140.0f, 40.0f, 5.0f }, { 100.0f, 100.0f, 0.0f });
-		graphicsSystem->AddComponent(UIID, shaderProgram, GraphicsType::UI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(222, 150, 0, 255));
+		//int UIID = handleManager->NewHandle();
+		//transformSystem->AddComponent(UIID, { 140.0f, 40.0f, 5.0f }, { 100.0f, 100.0f, 0.0f });
+		//graphicsSystem->AddComponent(UIID, shaderProgram, GraphicsType::UI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(222, 150, 0, 255));
 	}
 
-	void createFood(glm::vec3 pos)
+	void createFood(const glm::vec3& pos) const
 	{
 		int ID = handleManager->NewHandle();
-		Team team = Team::ONE;
 		transformSystem->AddComponent(ID, pos, { 10.0f, 10.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 150, 0, 255));
+		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 150, 0, 255));
 		colliderSystem->AddComponent(ID, ColliderType::FOOD);
 		selectableSystem->AddComponent(ID);
 		foodSystem->AddComponent(ID);
-		//cameraSystem->AddComponent(ID);
 
-		int childID = handleManager->NewHandle();
-		transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
-		graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
-		healthSystem->AddComponent(ID, childID);
+		//int childID = handleManager->NewHandle();
+		//transformSystem->AddChild(ID, childID, glm::vec3{ 0.0f, -15.0f, 0.0f }, glm::vec3{ 18.0f, 3.0f, 10.0f });
+		//graphicsSystem->AddComponent(childID, shaderProgram, GraphicsType::WORLDUI, resourceManager->GetTexture("Textures/blank.png").ID, SolengineV2::Colour(0, 150, 0, 155));
+		//healthSystem->AddComponent(ID, childID);
 
 		//piManager->AddComponent();
 	}
 
-	void createUnit(glm::vec3 pos)
+	void createUnit(const glm::vec3& pos, const StatSheet& stats) const
 	{
 		int ID = handleManager->NewHandle();
-		Team team = Team::ONE;
 		transformSystem->AddComponent(ID, pos, { 20.0f, 20.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(255, 255, 255, 255));
+		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(255, 255, 255, 255));
 		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR);
 		velocitySystem->AddComponent(ID, 0, { 0.0f, 0.0f });
-		survivalSystem->AddComponent(ID);
+		survivalSystem->AddComponent(ID, stats);
+		selectableSystem->AddComponent(ID);
 	}
 
-	void createFloor(glm::vec3 pos)
+	void createFloor(const glm::vec3& pos)
 	{
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 800.0f, 800.0f, -10.0f });
-		graphicsSystem->AddComponent(ID, shaderProgram, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/background1.png").ID, SolengineV2::Colour(255, 255, 255, 100));
+		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/background1.png").ID, SolengineV2::Colour(255, 255, 255, 100));
 	}
 };

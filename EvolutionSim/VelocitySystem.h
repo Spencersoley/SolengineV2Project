@@ -25,12 +25,14 @@ class VelocitySystem
 
 	std::map<int, VelocityComponent> velocityMap{};
 
+	const float VELOCITY_MODIFIER = 0.1f;
+
+
 public:
 	VelocitySystem(TransformSystem* _transformSystem) 
 		: 
 		transformSystem(_transformSystem)
 	{}
-
 
 	void AddComponent(int handle, float velocity, glm::vec2 dir)
 	{
@@ -45,7 +47,7 @@ public:
 		{
 			if (it->second.velocity != 0)
 			{
-				transformSystem->Translate(it->second.transform.get(), (it->second.direction * (it->second.velocity * dt)));
+				transformSystem->Translate(it->second.transform.get(), (it->second.direction * (it->second.velocity * dt * VELOCITY_MODIFIER)));
 			}
 		}
 	}

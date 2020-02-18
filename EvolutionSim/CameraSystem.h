@@ -1,14 +1,17 @@
 #pragma once
-#include <ShaderProgram.h>
+
+#include <ShaderManager.h>
 #include <glm\ext\matrix_float4x4.hpp>
 #include <glm\ext\matrix_clip_space.hpp>
 #include <glm\ext\matrix_transform.hpp>
 #include "TransformSystem.h"
+#include "MakeSharedEnabler.h"
 
 class CameraComponent
 {
 private:
 	friend class CameraSystem;
+
 	CameraComponent(std::shared_ptr<TransformComponent> _transform = nullptr, float _scale = 1.0f, float _maxScale = 5.0f, float _minScale = 0.5f)
 		:
 		transform(_transform),
@@ -27,97 +30,91 @@ private:
 
 class CameraSystem 
 {
-	SolengineV2::ShaderProgram* shaderProgram;
-	SolengineV2::ShaderProgramManager* shaderProgramManager;
+	std::shared_ptr<SolengineV2::ShaderProgram> shaderProgram;
+	SolengineV2::ShaderManager* shaderManager;
 	glm::mat4 orthoMatrix;
 	glm::mat4 uiMatrix;
 	int screenWidth, screenHeight;
 
 	TransformSystem* transformSystem;
 
-	std::map<int, CameraComponent> worldCameras{};
-
 public:
 	CameraSystem(TransformSystem* _transformSystem, 
-		SolengineV2::ShaderProgram* _shaderProgram, 
-		SolengineV2::ShaderProgramManager* _shaderProgramManager, 
+		std::shared_ptr<SolengineV2::ShaderProgram> _defaultShader, 
+		SolengineV2::ShaderManager* _shaderProgramManager, 
 		int _screenHeight = 500, 
 		int _screenWidth = 500)
 		:
 		transformSystem(_transformSystem),
-		shaderProgram(_shaderProgram),
-		shaderProgramManager(_shaderProgramManager),
+		shaderProgram(_defaultShader),
+		shaderManager(_shaderProgramManager),
 		orthoMatrix(1.0f),
 		screenHeight(_screenHeight),
 		screenWidth(_screenWidth),
-		ActiveCam(nullptr),
-		ActiveT(nullptr)
+		cameraComponent(nullptr),
+		cameraTransform(nullptr)
 	{
 		orthoMatrix = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
 		uiMatrix = glm::translate(orthoMatrix, glm::vec3{ (screenWidth / 2), (screenHeight / 2), 0.0f });
 	}
 
-	CameraComponent* ActiveCam;
-	std::shared_ptr<TransformComponent> ActiveT;
+	std::shared_ptr<CameraComponent> cameraComponent;
+	std::shared_ptr<TransformComponent> cameraTransform;
 	
 	int GetScreenHeight() { return screenHeight; }
 	int GetScreenWidth() { return screenWidth; }
 
-	void AddComponent(int handle)
+	//Sets the last cameracomponent added as the desired camera. 
+	//Designed for single use
+	void SetCamera()
 	{
-		//worldCameras[handle] = CameraComponent(transformSystem->GetLast()); requires private access that it doesn't have
-		worldCameras.try_emplace(handle, CameraComponent(transformSystem->GetLast())); //insert won't replace if it already exists at handle
-		ActiveCam = &((--worldCameras.end())->second);
-		ActiveT = ActiveCam->transform;
+		std::shared_ptr<CameraComponent> cam(new CameraComponent(transformSystem->GetLast()));
+		cameraComponent = cam;
+		cameraTransform = cameraComponent->transform;
 	}
 
-	void ProcessWorldCamera(const SolengineV2::ShaderProgram* sp)
+	//processing camera involves updating the projection matrix, updating the projection matrix in the shader used for rendering
+	void ProcessWorldCamera(const std::shared_ptr<SolengineV2::ShaderProgram> sp)
 	{
-		if (ActiveT == nullptr || ActiveCam == nullptr) return;
+		if (cameraTransform == nullptr || cameraComponent == nullptr) return;
 		
-		ActiveCam->NeedsMatrixUpdate |= transformSystem->GetIsUpdated(ActiveT.get()); //PROCESS CAMERA BEFORE GRAPHICS, AFTER PHYSICS
+		cameraComponent->NeedsMatrixUpdate |= transformSystem->GetIsUpdated(cameraTransform.get()); //PROCESS CAMERA BEFORE GRAPHICS, AFTER PHYSICS
 
-		if (ActiveCam->NeedsMatrixUpdate)
+		if (cameraComponent->NeedsMatrixUpdate)
 		{
-			glm::vec3 translationVec((screenWidth / 2) - transformSystem->GetPos(ActiveT.get()).x, (screenHeight / 2) - transformSystem->GetPos(ActiveT.get()).y, 0.0f);
+			glm::vec3 translationVec((screenWidth / 2) - transformSystem->GetPos(cameraTransform.get()).x, (screenHeight / 2) - transformSystem->GetPos(cameraTransform.get()).y, 0.0f);
 			glm::mat4 pMatrix = glm::translate(orthoMatrix, translationVec);
-			glm::vec3 scaleVec(ActiveCam->scale, ActiveCam->scale, 1.0f);
-			ActiveCam->ProjectionMatrix = glm::scale(glm::mat4(1.0f), scaleVec) * pMatrix;
-			ActiveCam->NeedsMatrixUpdate = false;
+			glm::vec3 scaleVec(cameraComponent->scale, cameraComponent->scale, 1.0f);
+			cameraComponent->ProjectionMatrix = glm::scale(glm::mat4(1.0f), scaleVec) * pMatrix;
+			cameraComponent->NeedsMatrixUpdate = false;
 		}
 
-		shaderProgramManager->SetProjectionMatrix(sp, ActiveCam->ProjectionMatrix);
+		shaderManager->SetProjectionMatrix(sp, cameraComponent->ProjectionMatrix);
 	}
 
 	void ProcessUICamera()
 	{	
-		shaderProgramManager->SetProjectionMatrix(shaderProgram, uiMatrix);
+		shaderManager->SetProjectionMatrix(shaderProgram, uiMatrix);
 	}
 
 	void UnuseShader()
 	{
-		shaderProgramManager->Unuse(shaderProgram);
-	}
-
-	void DeleteComponent(int handle)
-	{
-		worldCameras.erase(handle);
-		if (!NewCamera()) throw std::invalid_argument("No camera found! you must have a camera to render world content");
+		shaderManager->Unuse(shaderProgram);
 	}
 
 	void Zoom(float zoom)
 	{
-		float newScale = ActiveCam->scale + zoom;
-		if (newScale < ActiveCam->maxScale && newScale > ActiveCam->minScale)
+		float newScale = cameraComponent->scale + zoom;
+		if (newScale < cameraComponent->maxScale && newScale > cameraComponent->minScale)
 		{
-			ActiveCam->scale = newScale;
-			ActiveCam->NeedsMatrixUpdate = true;
+			cameraComponent->scale = newScale;
+			cameraComponent->NeedsMatrixUpdate = true;
 		}
 	}
 
 	float GetActiveCamScale()
 	{
-		return ActiveCam->scale;
+		return cameraComponent->scale;
 	}
 
 	glm::vec2 ScreenToWorldConvert(glm::vec2 screenCoords)
@@ -127,26 +124,10 @@ public:
 		//Converts 0 to centre
 		screenCoords -= glm::vec2{ screenWidth / 2, screenHeight / 2 };
 		//Scale the coordinates
-		screenCoords /= ActiveCam->scale;
+		screenCoords /= cameraComponent->scale;
 		//Translate with camera;
-		screenCoords += glm::vec2{ transformSystem->GetPos(ActiveT.get()).x, transformSystem->GetPos(ActiveT.get()).y };
+		screenCoords += glm::vec2{ transformSystem->GetPos(cameraTransform.get()).x, transformSystem->GetPos(cameraTransform.get()).y };
 
 		return screenCoords;
-	}
-
-private:
-
-	bool NewCamera()
-	{
-		if (!worldCameras.empty())
-		{
-			ActiveCam = &((--worldCameras.end())->second);
-			ActiveT = ActiveCam->transform;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
 	}
 };

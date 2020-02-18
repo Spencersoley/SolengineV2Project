@@ -4,18 +4,23 @@
 #include "FoodSystem.h"
 #include "VelocitySystem.h"
 #include "GraphicsSystem.h"
+#include "DuplicationData.h"
+#include "StatSheet.h"
+#include <algorithm>
 
 class SurvivalComponent
 {
 private:
 	friend class SurvivalSystem;
-	SurvivalComponent(std::shared_ptr<TransformComponent> _transform)
+	SurvivalComponent(std::shared_ptr<TransformComponent> _transform, StatSheet _statSheet)
 		:
 		transform(_transform),
 		isFed(0),
-		isHome(0)
+		isHome(0),
+		statSheet(_statSheet)
 	{}
 
+	StatSheet statSheet;
 	std::shared_ptr<TransformComponent> transform;
 	bool isHome;   // collider system knows of survival system, thus it can set isHome on collision with home
 	bool isFed;    // Collider system knows of survival system, thus it can set isFed on collision with food
@@ -56,12 +61,13 @@ public:
 		}
 	}
 
-	int shouldDuplicate = 3;
+	std::vector<DuplicationData> DuplicationDataVec{};
 
-	void AddComponent(int handle)
+	void AddComponent(int handle, StatSheet statSheet)
 	{
-		SurvivalComponent* surv = new SurvivalComponent(transformSystem->GetLast());
+		SurvivalComponent* surv = new SurvivalComponent(transformSystem->GetLast(), statSheet);
 		hungryMap.try_emplace(handle, surv);
+		graphicsSystem->SetColour(handle, { (GLubyte)std::min((int)(statSheet.Speed * statSheet.Speed * 255), 255), 255, 255, 255 });
 	}
 
 	void Process(int adjustedDeltaTicks)
@@ -73,14 +79,14 @@ public:
 			if (it->second->isFed) //set in collider
 			{
 				homeseekingMap.insert({ it->first, it->second });
-				SeekHome(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks); //sets off for home
+				SeekHome(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks, it->second->statSheet.Speed); //sets off for home
 				SetIsHome(it->first, false);
-				graphicsSystem->SetColour(it->first, { 0, 255, 0, 255 });
+				//graphicsSystem->SetColour(it->first, { 0, 255, 0, 255 });
 				hungryMap.erase(it++);
 			}
 			else
 			{
-				SeekFood(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks); //repeatedly seeks nearest food
+				SeekFood(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks, it->second->statSheet.Speed); //repeatedly seeks nearest food
 				if (noFood) graphicsSystem->SetColour(it->first, { 255, 0, 0, 255 });
 				++it;
 			}
@@ -92,7 +98,7 @@ public:
 			{
 				awaitingMap.insert({ it->first, it->second });
 				velocitySystem->SetVelocity(it->first, 0.0f);
-				graphicsSystem->SetColour(it->first, { 0, 255, 255, 255 });
+				//graphicsSystem->SetColour(it->first, { 0, 255, 255, 255 });
 				homeseekingMap.erase(it++);
 			}
 			else
@@ -104,19 +110,23 @@ public:
 	    if ((noFood && !homeseekingMap.size()) || IsEveryoneHomeAndFed())
 		{
 			KillUnfed();
-			shouldDuplicate += awaitingMap.size();
 			SetAllAwaitingFed(false); // sets all as unfed
 			for (auto it = awaitingMap.begin(); it != awaitingMap.end(); )
 			{
 				hungryMap.insert({ it->first, it->second });
-				graphicsSystem->SetColour(it->first, { 255, 255, 255, 255 });
+				StatSheet inherited = it->second->statSheet;
+				float r = -0.02f + (float)(rand()) / (float)(RAND_MAX / 0.1f);
+				inherited.Speed += r;
+				if (inherited.Speed < 0.02f) inherited.Speed = 0.02f;
+				else if (inherited.Speed > 1.0f) inherited.Speed = 1.0f;
+				DuplicationDataVec.push_back(DuplicationData(transformSystem->GetPos(it->second->transform.get()), inherited)); //add to duplication data
 				awaitingMap.erase(it++);
 			}
 		}
 	}
 
 
-	void SeekFood(int handle, glm::vec3 position, int adjustedDeltaTicks)
+	void SeekFood(int handle, glm::vec3 position, int adjustedDeltaTicks, float speed)
 	{
 		if (foodSystem->NoFood())
 		{
@@ -125,7 +135,7 @@ public:
 		}
 
 		glm::vec3 nearestFood = foodSystem->FindNearestFoodToPoint(position);
-		velocitySystem->SetVelocityAndDirection(handle, 0.05f, directionAToB(position, nearestFood));
+		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB(position, nearestFood));
 	}
 
 	glm::vec2 directionAToB(glm::vec3 A, glm::vec3 B)
@@ -133,9 +143,9 @@ public:
 		return glm::normalize(glm::vec2{ B.x - A.x, B.y - A.y });
 	}
 
-	void SeekHome(int handle, glm::vec3 position, int adjusteddeltaTicks)
+	void SeekHome(int handle, glm::vec3 position, int adjusteddeltaTicks, float speed)
 	{
-		velocitySystem->SetVelocityAndDirection(handle, 0.05f, directionAToB({ 0.0f, 0.0f, 0.0f }, position));
+		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB({ 0.0f, 0.0f, 0.0f }, position));
 	}
 
 	void SetIsHome(int handle, bool set)
