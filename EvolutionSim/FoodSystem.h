@@ -1,8 +1,7 @@
 #pragma once
-
 #include <map>
-#include "TransformSystem.h"
 #include <glm\geometric.hpp>
+#include "TransformSystem.h"
 
 class FoodComponent
 {
@@ -31,21 +30,13 @@ public:
 		foodMap.try_emplace(handle, FoodComponent(transformSystem->GetLast()));
 	}
 
-	glm::vec3 FindNearestFoodToPoint(glm::vec3 point)
+	glm::vec3 FindNearestFoodToPoint(const glm::vec3& point) const
 	{
 		if (foodMap.empty()) return point;
 
 		auto it = foodMap.begin();
 		glm::vec3 foodPos = transformSystem->GetPos(it->second.transform.get());
 		glm::vec3 nearest = foodPos;
-
-		/*	auto dist = [foodPos, point]()
-			{
-				float xDist = foodPos.x - point.x;
-				float yDist = foodPos.y - point.y;
-				return xDist * xDist + yDist * yDist;
-			};*/
-
 
 		float xDist = foodPos.x - point.x;
 		float yDist = foodPos.y - point.y;
@@ -67,16 +58,15 @@ public:
 				closestDist = totalDist;
 				nearest = foodPos;
 			}
-
 			++it;
 		}
 
 		return nearest;
 	}
 
-	bool NoFood()
+	bool NoFood() const
 	{
-		return (foodMap.begin() == foodMap.end());
+		return foodMap.begin() == foodMap.end();
 	}
 
 	void DeleteComponent(int handle)

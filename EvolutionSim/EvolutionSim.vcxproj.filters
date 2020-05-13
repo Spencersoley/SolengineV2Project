@@ -44,9 +44,6 @@
     <ClInclude Include="CameraSystem.h">
       <Filter>Source Files\Core\System\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsSystem.h">
-      <Filter>Source Files\Core\System\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="ColliderSystem.h">
       <Filter>Source Files\Core\System\Physics</Filter>
     </ClInclude>
@@ -74,8 +71,11 @@
     <ClInclude Include="StatSheet.h">
       <Filter>Source Files\Core\Data</Filter>
     </ClInclude>
-    <ClInclude Include="MakeSharedEnabler.h">
-      <Filter>Source Files\Helper</Filter>
+    <ClInclude Include="SpriteSystem.h">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="TextSystem.h">
+      <Filter>Source Files\Core\System\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

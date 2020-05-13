@@ -6,7 +6,7 @@
 #include <memory>
 #include <iostream>
 #include <map>
-#include "MakeSharedEnabler.h"
+//#include "MakeSharedEnabler.h"
 
 enum class TransformState : unsigned int { ACTIVE, INACTIVE, DELETE };
 
@@ -40,7 +40,6 @@ class TransformSystem //Perhaps this is simply a gameobject manager?
 	std::vector<int> handlesToDelete;
 
 public:
-
 	std::shared_ptr<TransformComponent> GetLastTransform() { return lastTransform; } //creation optimisation
 	std::vector<int>::iterator GetHandlesToDeleteBegin() { return handlesToDelete.begin(); } //is there any merit to only exposing begin/end iterators?
 	std::vector<int>::iterator GetHandlesToDeleteEnd() { return handlesToDelete.end(); }
@@ -141,9 +140,6 @@ public:
 		}
 	}
 
-	///
-
-	///
 	void Slice(TransformComponent* TC, float sliceSize)
 	{
 		float leftSide = TC->Pos.x - (TC->Dims.x / 2.0f);

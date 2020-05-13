@@ -1,12 +1,13 @@
 #pragma once
-
+#include <algorithm>
 #include "TransformSystem.h"
 #include "FoodSystem.h"
 #include "VelocitySystem.h"
-#include "GraphicsSystem.h"
 #include "DuplicationData.h"
 #include "StatSheet.h"
-#include <algorithm>
+#include "SpriteSystem.h"
+#include "TextSystem.h"
+
 
 class SurvivalComponent
 {
@@ -31,19 +32,30 @@ class SurvivalSystem
 	TransformSystem* transformSystem;
 	FoodSystem* foodSystem;
 	VelocitySystem* velocitySystem;
-	GraphicsSystem* graphicsSystem;
+	SpriteSystem* spriteSystem;
+	TextSystem* textSystem;
 
 	std::map<int, SurvivalComponent*> hungryMap{};
 	std::map<int, SurvivalComponent*> homeseekingMap{};
 	std::map<int, SurvivalComponent*> awaitingMap{};
 
+	int waveCount = 0;
+	int waveTextHandle = -1;
+
 public:
-	SurvivalSystem(TransformSystem* _transformSystem, VelocitySystem* _velocitySystem, FoodSystem* _foodSystem, GraphicsSystem* _graphicsSystem)
+	SurvivalSystem(
+		TransformSystem* _transformSystem,
+		VelocitySystem* _velocitySystem,
+		FoodSystem* _foodSystem,
+		SpriteSystem* _spriteSystem,
+		TextSystem* _textSystem
+	)
 		:
 		transformSystem(_transformSystem),
 		foodSystem(_foodSystem),
 		velocitySystem(_velocitySystem),
-		graphicsSystem(_graphicsSystem)
+		spriteSystem(_spriteSystem),
+		textSystem(_textSystem)
 	{}
 	~SurvivalSystem()
 	{
@@ -67,7 +79,7 @@ public:
 	{
 		SurvivalComponent* surv = new SurvivalComponent(transformSystem->GetLast(), statSheet);
 		hungryMap.try_emplace(handle, surv);
-		graphicsSystem->SetColour(handle, { (GLubyte)std::min((int)(statSheet.Speed * statSheet.Speed * 255), 255), 255, 255, 255 });
+		spriteSystem->SetColour(handle, { 255, 255, 255, 255 });
 	}
 
 	void Process(int adjustedDeltaTicks)
@@ -87,7 +99,7 @@ public:
 			else
 			{
 				SeekFood(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks, it->second->statSheet.Speed); //repeatedly seeks nearest food
-				if (noFood) graphicsSystem->SetColour(it->first, { 255, 0, 0, 255 });
+				if (noFood) spriteSystem->SetColour(it->first, { 255, 0, 0, 255 });
 				++it;
 			}
 		}
@@ -110,6 +122,9 @@ public:
 	    if ((noFood && !homeseekingMap.size()) || IsEveryoneHomeAndFed())
 		{
 			KillUnfed();
+
+			textSystem->UpdateText(waveTextHandle, std::to_string(++waveCount));
+
 			SetAllAwaitingFed(false); // sets all as unfed
 			for (auto it = awaitingMap.begin(); it != awaitingMap.end(); )
 			{
@@ -118,15 +133,14 @@ public:
 				float r = -0.02f + (float)(rand()) / (float)(RAND_MAX / 0.1f);
 				inherited.Speed += r;
 				if (inherited.Speed < 0.02f) inherited.Speed = 0.02f;
-				else if (inherited.Speed > 1.0f) inherited.Speed = 1.0f;
+				//else if (inherited.Speed > 1.0f) inherited.Speed = 1.0f;
 				DuplicationDataVec.push_back(DuplicationData(transformSystem->GetPos(it->second->transform.get()), inherited)); //add to duplication data
 				awaitingMap.erase(it++);
 			}
 		}
 	}
 
-
-	void SeekFood(int handle, glm::vec3 position, int adjustedDeltaTicks, float speed)
+	void SeekFood(int handle, glm::vec3 position, int adjustedDeltaTicks, float speed) const
 	{
 		if (foodSystem->NoFood())
 		{
@@ -138,17 +152,17 @@ public:
 		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB(position, nearestFood));
 	}
 
-	glm::vec2 directionAToB(glm::vec3 A, glm::vec3 B)
+	glm::vec2 directionAToB(glm::vec3 A, glm::vec3 B) const
 	{
 		return glm::normalize(glm::vec2{ B.x - A.x, B.y - A.y });
 	}
 
-	void SeekHome(int handle, glm::vec3 position, int adjusteddeltaTicks, float speed)
+	void SeekHome(int handle, glm::vec3 position, int adjusteddeltaTicks, float speed) const
 	{
 		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB({ 0.0f, 0.0f, 0.0f }, position));
 	}
 
-	void SetIsHome(int handle, bool set)
+	void SetIsHome(int handle, bool set) 
 	{
 		auto it = homeseekingMap.find(handle);
 		if (it != homeseekingMap.end())
@@ -157,17 +171,17 @@ public:
 		}
 	}
 
-	bool IsEveryoneHomeAndFed()
+	bool IsEveryoneHomeAndFed() const
 	{
 		return (!hungryMap.size() && !homeseekingMap.size());
 	}
 
-	bool IsEveryoneHome()
+	bool IsEveryoneHome() const
 	{
 		return !homeseekingMap.size();
 	}
 
-	void KillUnfed()
+	void KillUnfed() 
 	{
 		for (auto it = hungryMap.begin(); it != hungryMap.end(); )
 		{
@@ -176,7 +190,7 @@ public:
 		}
 	}
 
-	void SetFed(int handle, bool set)
+	void SetFed(int handle, bool set) const
 	{
 		auto it = hungryMap.find(handle);
 		if (it != hungryMap.end())
@@ -185,7 +199,7 @@ public:
 		}
 	}
 
-	void SetAllAwaitingFed(bool set)
+	void SetAllAwaitingFed(bool set) const
 	{
 		for (auto it = awaitingMap.begin(); it != awaitingMap.end(); ++it)
 		{
@@ -193,10 +207,12 @@ public:
 		}
 	}
 
-	void DeleteComponent(int handle)
+	void DeleteComponent(int handle) 
 	{
 		hungryMap.erase(handle);
 		homeseekingMap.erase(handle);
 		awaitingMap.erase(handle);
 	}
+
+	void SetWaveTextHandle(int handle) { waveTextHandle = handle; }
 };

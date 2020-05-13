@@ -81,6 +81,9 @@
     <ClInclude Include="SDLInit.h">
       <Filter>Source Files\Core\SDL</Filter>
     </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ShaderFactory.h">

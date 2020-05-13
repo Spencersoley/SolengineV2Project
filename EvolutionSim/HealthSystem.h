@@ -29,9 +29,9 @@ class HealthSystem
 	std::map<int, HealthComponent> healthMap{};
 
 public:
-	HealthSystem(TransformSystem* ts)
+	HealthSystem(TransformSystem* _transformSystem)
 		:
-		transformSystem(ts)
+		transformSystem(_transformSystem)
 	{}
 
 	std::map<int, HealthComponent>::iterator GetHealthMapBegin() { return healthMap.begin(); }
@@ -42,7 +42,7 @@ public:
 		healthMap.try_emplace(handle, HealthComponent(transformSystem->GetLast(), 100, healthbarHandle));
 	}
 
-	void UpdateHealth(int handle, int healthChange)
+	void UpdateHealth(int handle, int healthChange) 
 	{
 		auto it = healthMap.find(handle);
 		if (it == healthMap.end()) return;
@@ -66,19 +66,10 @@ public:
 		}
 	}
 
-	int GetHealthbarHandle(HealthComponent* healthComponent)
-	{
-		return healthComponent->healthbarHandle;
-	}
+	int GetHealthbarHandle(HealthComponent* healthComponent) const { return healthComponent->healthbarHandle; }
 
 	// Alternative: implement a conditional visibility component?
-	TransformComponent* GetTransform(HealthComponent* HC)
-	{
-		return HC->healthbar.get();
-	}
+	TransformComponent* GetTransform(HealthComponent* HC) { return HC->healthbar.get(); }
 
-	void DeleteComponent(int handle)
-	{
-		healthMap.erase(handle);
-	}
+	void DeleteComponent(int handle) { healthMap.erase(handle); }
 };

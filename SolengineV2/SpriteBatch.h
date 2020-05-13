@@ -33,7 +33,6 @@ namespace SolengineV2
 		{
 			createVertexArray();
 		};
-		~SpriteBatch() {};
 
 		void Dispose()
 		{

@@ -1,6 +1,6 @@
-﻿#include <time.h>
+﻿#pragma once
+#include <time.h>
 #include <ResourceManager.h>
-#include "GraphicsSystem.h"
 #include "CameraSystem.h"
 #include "ColliderSystem.h"
 #include "UserInputSystem.h"
@@ -9,6 +9,7 @@
 #include "HandleManager.h"
 #include "SelectableSystem.h"
 #include "DuplicationData.h"
+#include "SpriteSystem.h"
 
 // implement creator and deleter as a single class
 class EntityManager
@@ -22,7 +23,8 @@ public:
 		handleManager(nullptr),
 		cameraSystem(nullptr),
 		selectableSystem(nullptr),
-		graphicsSystem(nullptr),
+		spriteSystem(nullptr),
+		textSystem(nullptr),
 		userInputSystem(nullptr),
 		colliderSystem(nullptr),
 		velocitySystem(nullptr),
@@ -37,7 +39,8 @@ public:
 		HandleManager* handle,
 		CameraSystem* camera,
 		SelectableSystem* selectable,
-		GraphicsSystem* graphics,
+		SpriteSystem* sprites,
+		TextSystem* texts,
 		UserInputSystem* userinput,
 		ColliderSystem* collider,
 		VelocitySystem* velocity,
@@ -53,7 +56,8 @@ public:
 		handleManager = handle;
 		cameraSystem = camera;
 		selectableSystem = selectable;
-		graphicsSystem = graphics;
+		spriteSystem = sprites;
+		textSystem = texts;
 		userInputSystem = userinput;
 		colliderSystem = collider;
 		velocitySystem = velocity;
@@ -73,6 +77,8 @@ public:
 		generateFood(10);
 
 		createPlayer();
+
+		createText();
 	}
 
 	void Process() //simple concept for generating new entities in game.
@@ -82,7 +88,8 @@ public:
 			int handle = (*it);
 			handleManager->DeleteHandle(handle);
 
-			graphicsSystem->DeleteComponent(handle);
+			spriteSystem->DeleteComponent(handle);
+			textSystem->DeleteComponent(handle);
 			userInputSystem->DeleteComponent(handle);
 			colliderSystem->DeleteComponent(handle);
 			velocitySystem->DeleteComponent(handle);
@@ -97,9 +104,17 @@ public:
 		if (survivalSystem->DuplicationDataVec.size())
 		{
 			generateUnits(survivalSystem->DuplicationDataVec);
-			generateFood(5);
+			generateFood(25);
 			survivalSystem->DuplicationDataVec.clear();
 		}
+	}
+
+    void createText()
+	{
+		int ID = handleManager->NewHandle();
+		transformSystem->AddComponent(ID, { 350.0f, -400.0f, 5.0f }, { 1.0f, 1.0f, 0.0f });
+		textSystem->AddComponent(ID, { 255, 255, 255, 255 }, "0");
+		survivalSystem->SetWaveTextHandle(ID);
 	}
 
 private:
@@ -110,7 +125,8 @@ private:
 	HandleManager* handleManager;
 	CameraSystem* cameraSystem;
 	SelectableSystem* selectableSystem;
-	GraphicsSystem* graphicsSystem;
+	SpriteSystem* spriteSystem;
+	TextSystem* textSystem;
 	UserInputSystem* userInputSystem;
 	ColliderSystem* colliderSystem;
 	VelocitySystem* velocitySystem;
@@ -137,7 +153,7 @@ private:
 		}
 	}
 
-	void generateUnits(int num)
+	void generateUnits(int num) const
 	{
 		for (int i = 0; i < num; i++)
 		{
@@ -145,7 +161,7 @@ private:
 		}
 	}
 
-	glm::vec3 randomPosOutsideCircle(float minRadius)
+	glm::vec3 randomPosOutsideCircle(float minRadius) const
 	{
 		const float PI = 3.14159265;
 		float r1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -156,7 +172,7 @@ private:
 	}
 
 
-	glm::vec3 randomPosInCircle(float maxRadius)
+	glm::vec3 randomPosInCircle(float maxRadius) const
 	{
 		const float PI = 3.14159265;
 		float r1 = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -205,7 +221,7 @@ private:
 	{
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 10.0f, 10.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 150, 0, 255));
+		spriteSystem->AddComponent(ID, defaultShader, SpriteType::GENERAL, resourceManager->GetTexture("Textures/bul.png").ID, SolengineV2::Colour(255, 150, 0, 255));
 		colliderSystem->AddComponent(ID, ColliderType::FOOD);
 		selectableSystem->AddComponent(ID);
 		foodSystem->AddComponent(ID);
@@ -222,7 +238,7 @@ private:
 	{
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 20.0f, 20.0f, 0.0f });
-		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(255, 255, 255, 255));
+		spriteSystem->AddComponent(ID, defaultShader, SpriteType::GENERAL, resourceManager->GetTexture("Textures/Circle.png").ID, SolengineV2::Colour(255, 255, 255, 255));
 		colliderSystem->AddComponent(ID, ColliderType::CIRCULAR);
 		velocitySystem->AddComponent(ID, 0, { 0.0f, 0.0f });
 		survivalSystem->AddComponent(ID, stats);
@@ -233,6 +249,6 @@ private:
 	{
 		int ID = handleManager->NewHandle();
 		transformSystem->AddComponent(ID, pos, { 800.0f, 800.0f, -10.0f });
-		graphicsSystem->AddComponent(ID, defaultShader, GraphicsType::GENERAL, resourceManager->GetTexture("Textures/background1.png").ID, SolengineV2::Colour(255, 255, 255, 100));
+		spriteSystem->AddComponent(ID, defaultShader, SpriteType::GENERAL, resourceManager->GetTexture("Textures/background1.png").ID, SolengineV2::Colour(255, 255, 255, 100));
 	}
 };

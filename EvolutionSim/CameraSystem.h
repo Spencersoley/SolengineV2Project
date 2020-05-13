@@ -1,11 +1,9 @@
 #pragma once
-
-#include <ShaderManager.h>
 #include <glm\ext\matrix_float4x4.hpp>
 #include <glm\ext\matrix_clip_space.hpp>
 #include <glm\ext\matrix_transform.hpp>
+#include <ShaderManager.h>
 #include "TransformSystem.h"
-#include "MakeSharedEnabler.h"
 
 class CameraComponent
 {
@@ -39,11 +37,13 @@ class CameraSystem
 	TransformSystem* transformSystem;
 
 public:
-	CameraSystem(TransformSystem* _transformSystem, 
+	CameraSystem(
+		TransformSystem* _transformSystem, 
 		std::shared_ptr<SolengineV2::ShaderProgram> _defaultShader, 
 		SolengineV2::ShaderManager* _shaderProgramManager, 
 		int _screenHeight = 500, 
-		int _screenWidth = 500)
+		int _screenWidth = 500
+	)
 		:
 		transformSystem(_transformSystem),
 		shaderProgram(_defaultShader),
@@ -74,7 +74,7 @@ public:
 	}
 
 	//processing camera involves updating the projection matrix, updating the projection matrix in the shader used for rendering
-	void ProcessWorldCamera(const std::shared_ptr<SolengineV2::ShaderProgram> sp)
+	void ProcessWorldCamera(const std::shared_ptr<SolengineV2::ShaderProgram> sp) const
 	{
 		if (cameraTransform == nullptr || cameraComponent == nullptr) return;
 		
@@ -82,7 +82,10 @@ public:
 
 		if (cameraComponent->NeedsMatrixUpdate)
 		{
-			glm::vec3 translationVec((screenWidth / 2) - transformSystem->GetPos(cameraTransform.get()).x, (screenHeight / 2) - transformSystem->GetPos(cameraTransform.get()).y, 0.0f);
+			glm::vec3 translationVec(
+				(screenWidth / 2) - transformSystem->GetPos(cameraTransform.get()).x, 
+				(screenHeight / 2) - transformSystem->GetPos(cameraTransform.get()).y, 
+				0.0f);
 			glm::mat4 pMatrix = glm::translate(orthoMatrix, translationVec);
 			glm::vec3 scaleVec(cameraComponent->scale, cameraComponent->scale, 1.0f);
 			cameraComponent->ProjectionMatrix = glm::scale(glm::mat4(1.0f), scaleVec) * pMatrix;
@@ -92,17 +95,17 @@ public:
 		shaderManager->SetProjectionMatrix(sp, cameraComponent->ProjectionMatrix);
 	}
 
-	void ProcessUICamera()
+	void ProcessUICamera() const
 	{	
 		shaderManager->SetProjectionMatrix(shaderProgram, uiMatrix);
 	}
 
-	void UnuseShader()
+	void UnuseShader() const
 	{
 		shaderManager->Unuse(shaderProgram);
 	}
 
-	void Zoom(float zoom)
+	void Zoom(float zoom) const
 	{
 		float newScale = cameraComponent->scale + zoom;
 		if (newScale < cameraComponent->maxScale && newScale > cameraComponent->minScale)
@@ -112,12 +115,12 @@ public:
 		}
 	}
 
-	float GetActiveCamScale()
+	float GetActiveCamScale() const
 	{
 		return cameraComponent->scale;
 	}
 
-	glm::vec2 ScreenToWorldConvert(glm::vec2 screenCoords)
+	glm::vec2 ScreenToWorldConvert(glm::vec2 screenCoords) const
 	{
 		//Invert Y direction
 		screenCoords.y = screenHeight - screenCoords.y;

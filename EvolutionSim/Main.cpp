@@ -3,19 +3,15 @@
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 
-//#include "../SolengineV2/SDL.h"
-#include "../SolengineV2/ResourceManager.h"
-
-#include "../SolengineV2/ShaderFactory.h"
-#include "../SolengineV2/ShaderManager.h"
-
-#include "../SolengineV2/Window.h"
-
-#include "../SolengineV2/TimeManager.h"
-#include "../SolengineV2/InputManager.h"
+#include <ResourceManager.h>
+#include <ShaderFactory.h>
+#include <ShaderManager.h>
+#include <Window.h>
+#include <TimeManager.h>
+#include <InputManager.h>
+#include <SDLInit.h>
 
 #include "TransformSystem.h"
-#include "GraphicsSystem.h"
 #include "CameraSystem.h"
 #include "UserInputSystem.h"
 #include "ColliderSystem.h"
@@ -25,9 +21,8 @@
 #include "SelectableSystem.h"
 #include "FoodSystem.h"
 #include "SurvivalSystem.h"
-#include <SDLInit.h>
-
-
+#include "SpriteSystem.h"
+#include "TextSystem.h"
 
 //multiple shaders?
 //UI logic
@@ -41,30 +36,32 @@ int main(int argc, char** argv)
 {
 	SolengineV2::initialiseSDL();
 	int screenHeight = 1000, screenWidth = 1000;
+
 	SolengineV2::Window                window("SolengineV2", screenWidth, screenHeight, SolengineV2::Colour(0, 0, 0, 255));
 	SolengineV2::IOManager             iOManager;
 	SolengineV2::ResourceManager       resourceManager(&iOManager);
 	SolengineV2::ShaderManager         shaderManager;
 	SolengineV2::ShaderFactory         shaderFactory(&shaderManager);
-	SolengineV2::ShaderProgram         shaderProgram;
-	shaderFactory.CreateShader("colourShading", "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
 	SolengineV2::TimeManager           timeManager(6000, true);
 	SolengineV2::InputManager          inputManager;
+
+	shaderFactory.CreateShader("colourShading", "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
 
 	EntityManager      entityManager;
 	HandleManager      handleManager;
 	TransformSystem    transformSystem; 
 	VelocitySystem     velocitySystem    (&transformSystem);
-	CameraSystem       cameraSystem      (&transformSystem, shaderManager.GetShader("colourShading"), &shaderManager, screenHeight, screenWidth); // camera
+	CameraSystem       cameraSystem      (&transformSystem, shaderManager.GetShader("colourShading"), &shaderManager, screenHeight, screenWidth); 
 	SelectableSystem   selectableSystem  (&transformSystem, &cameraSystem, &inputManager);
-	GraphicsSystem     graphicsSystem    (&transformSystem, &cameraSystem); // graphics
+	SpriteSystem       spriteSystem      (&transformSystem, &cameraSystem); 
 	HealthSystem       healthSystem      (&transformSystem);
-	UserInputSystem    userInputSystem   (&transformSystem, &cameraSystem, &healthSystem, &graphicsSystem, &inputManager);
+	TextSystem         textSystem        (&transformSystem, &cameraSystem, shaderManager.GetShader("colourShading"));
+	UserInputSystem    userInputSystem   (&transformSystem, &cameraSystem, &healthSystem, &spriteSystem, &inputManager);
 	FoodSystem         foodSystem        (&transformSystem);
-	SurvivalSystem     survivalSystem    (&transformSystem, &velocitySystem, &foodSystem, &graphicsSystem);
-	ColliderSystem     colliderSystem(&transformSystem, &survivalSystem);
+	SurvivalSystem     survivalSystem    (&transformSystem, &velocitySystem, &foodSystem, &spriteSystem, &textSystem);
+	ColliderSystem     colliderSystem    (&transformSystem, &survivalSystem);
 
-	graphicsSystem.SetSelectionBoxTextureID(resourceManager.GetTexture("Textures/SelectionBox.png").ID);
+	spriteSystem.SetSelectionBoxTextureID(resourceManager.GetTexture("Textures/SelectionBox.png").ID);
 
 	entityManager.Init(
 		shaderManager.GetShader("colourShading"),
@@ -73,7 +70,8 @@ int main(int argc, char** argv)
 		&handleManager, 
 		&cameraSystem, 
 		&selectableSystem,
-		&graphicsSystem, 
+		&spriteSystem, 
+		&textSystem,
 		&userInputSystem, 
 		&colliderSystem, 
 		&velocitySystem, 
@@ -97,13 +95,12 @@ int main(int argc, char** argv)
 		survivalSystem.Process(adjustedDeltaTicks);
 
 		window.Clear();
-		graphicsSystem.Process();
-
+		spriteSystem.Process();
+		textSystem.Process();
 
 		window.SwapBuffer();
 		timeManager.LimitFPS();
 	}
-
 
 	return 0;
 }

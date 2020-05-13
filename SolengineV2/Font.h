@@ -1,6 +1,5 @@
 #pragma once
 
-//#include <SDL_TTF/SDL_ttf.h>
 
 #include <glm/glm.hpp>
 #include <map>
@@ -50,29 +49,30 @@ namespace SolengineV2
 			Init(font, size, FIRST_PRINTABLE_CHAR, LAST_PRINTABLE_CHAR);
 		}
 
-		void Init(const char* font, int size, char cs, char ce)
+		void Init(const char* font, int size, char firstChar, char lastChar)
 		{
 			// Initialize SDL_ttf
 			if (!TTF_WasInit()) TTF_Init();
 
-			TTF_Font* f = TTF_OpenFont(font, size);
-			if (f == nullptr)
+			TTF_Font* fontBuffer = TTF_OpenFont(font, size);
+			if (fontBuffer == nullptr)
 			{
 				fprintf(stderr, "Failed to open TTF font %s\n", font);
 				fflush(stderr);
 				throw std::exception("TTF failed to load");
 			}
-			m_fontHeight = TTF_FontHeight(f);
-			m_regStart = cs;
-			m_regLength = ce - cs + 1;
+			m_fontHeight = TTF_FontHeight(fontBuffer);
+			m_regStart = firstChar;
+			m_regLength = lastChar - firstChar + 1;
 			float padding = (float)size / 8;
 
-			// First measure all the regions
+			// First we measure all the regions
 			glm::ivec4* glyphRects = new glm::ivec4[m_regLength];
-			int i = 0, advance;
-			for (char c = cs; c <= ce; c++)
+			int i = 0;
+			int advance;
+			for (char c = firstChar; c <= lastChar; c++)
 			{
-				TTF_GlyphMetrics(f, c, &glyphRects[i].x, &glyphRects[i].z, &glyphRects[i].y, &glyphRects[i].w, &advance);
+				TTF_GlyphMetrics(fontBuffer, c, &glyphRects[i].x, &glyphRects[i].z, &glyphRects[i].y, &glyphRects[i].w, &advance);
 				glyphRects[i].z -= glyphRects[i].x;
 				glyphRects[i].x = 0;
 				glyphRects[i].w -= glyphRects[i].y;
@@ -140,7 +140,7 @@ namespace SolengineV2
 				{
 					int gi = bestPartition[ri][ci];
 
-					SDL_Surface* glyphSurface = TTF_RenderGlyph_Blended(f, (char)(cs + gi), fg);
+					SDL_Surface* glyphSurface = TTF_RenderGlyph_Blended(fontBuffer, (char)(firstChar + gi), fg);
 
 					// Pre-multiplication occurs here
 					unsigned char* sp = (unsigned char*)glyphSurface->pixels;
@@ -186,7 +186,7 @@ namespace SolengineV2
 			p_glyphs = new CharGlyph[m_regLength + 1];
 			for (i = 0; i < m_regLength; i++)
 			{
-				p_glyphs[i].character = (char)(cs + i);
+				p_glyphs[i].character = (char)(firstChar + i);
 				p_glyphs[i].size = glm::vec2(glyphRects[i].z, glyphRects[i].w);
 				p_glyphs[i].uvRect = glm::vec4
 				(
@@ -203,7 +203,7 @@ namespace SolengineV2
 			glBindTexture(GL_TEXTURE_2D, 0);
 			delete[] glyphRects;
 			delete[] bestPartition;
-			TTF_CloseFont(f);
+			TTF_CloseFont(fontBuffer);
 		}
 
 		void Dispose()

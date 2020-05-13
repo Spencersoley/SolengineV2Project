@@ -3,6 +3,7 @@
 #include "TransformSystem.h"
 #include "CameraSystem.h"
 #include "HealthSystem.h"
+#include "SpriteSystem.h"
 
 class UserInputComponent
 {
@@ -23,18 +24,24 @@ class UserInputSystem
 	TransformSystem* transformSystem;
 	CameraSystem* cameraSystem;
 	HealthSystem* healthSystem;
-	GraphicsSystem* graphicsSystem;
+	SpriteSystem* spriteSystem;
 
 	std::map<int, UserInputComponent> userInputMap{};
 
 public:
-	UserInputSystem(TransformSystem* ts, CameraSystem* cs, HealthSystem* hs, GraphicsSystem* gs, SolengineV2::InputManager* im) 
+	UserInputSystem(
+		TransformSystem* _transformSystem, 
+		CameraSystem* _cameraSystem, 
+		HealthSystem* _healthSystem, 
+		SpriteSystem* _spriteSystem, 
+		SolengineV2::InputManager* _inputManager
+	) 
 		:
-		transformSystem(ts),
-		cameraSystem(cs),
-		inputManager(im),
-		healthSystem(hs),
-		graphicsSystem(gs)
+		transformSystem(_transformSystem),
+		cameraSystem(_cameraSystem),
+		healthSystem(_healthSystem),
+		spriteSystem(_spriteSystem),
+		inputManager(_inputManager)
 	{}
 
 	std::vector<glm::vec2> newpos;
@@ -47,7 +54,7 @@ public:
 		userInputMap.try_emplace(handle, UserInputComponent(transformSystem->GetLast()));
 	}
 
-	void Process(int dt)
+	void Process(int dt) 
 	{
 		for (auto it = userInputMap.begin(); it != userInputMap.end(); ++it)
 		{
@@ -96,7 +103,7 @@ public:
 	}
 
 	bool healthVisible = true;
-	void ToggleDisplay()
+	void ToggleDisplay() 
 	{
 		int healthbarHandle;
 		std::cout << "Toggle";
@@ -105,7 +112,7 @@ public:
 			for (auto healthComponentIt = healthSystem->GetHealthMapBegin(); healthComponentIt != healthSystem->GetHealthMapEnd(); ++healthComponentIt)
 			{
 				healthbarHandle = healthSystem->GetHealthbarHandle(&(healthComponentIt->second));
-				graphicsSystem->SetVisibility(healthbarHandle, false);
+				spriteSystem->SetVisibility(healthbarHandle, false);
 			}
 			healthVisible = false;
 		}
@@ -113,7 +120,7 @@ public:
 		{
 			for (auto it = healthSystem->GetHealthMapBegin(); it != healthSystem->GetHealthMapEnd(); ++it)
 			{
-				graphicsSystem->SetVisibility(healthSystem->GetHealthbarHandle(&(it->second)), true);
+				spriteSystem->SetVisibility(healthSystem->GetHealthbarHandle(&(it->second)), true);
 			}
 			healthVisible = true;
 		}

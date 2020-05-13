@@ -28,12 +28,6 @@ namespace SolengineV2
 			return it->second;
 		}
 
-		void SetProjectionMatrix(const std::shared_ptr<ShaderProgram> sp, glm::mat4 projection)
-		{
-			Use(sp);
-			glUniformMatrix4fv(GetUniformLocation(sp, "P"), 1, GL_FALSE, &(projection[0][0]));
-		}
-
 		GLuint GetUniformLocation(const std::shared_ptr<ShaderProgram> sp, const std::string& uniformName)
 		{
 			GLint location = glGetUniformLocation(sp->programID, uniformName.c_str());
@@ -52,6 +46,12 @@ namespace SolengineV2
 			//Shader uses texture 0
 			GLint textureUniform = GetUniformLocation(sp, "mySampler");
 			glUniform1i(textureUniform, 0);
+		}
+
+		void SetProjectionMatrix(const std::shared_ptr<ShaderProgram> sp, glm::mat4 projection)
+		{
+			Use(sp);
+			glUniformMatrix4fv(GetUniformLocation(sp, "P"), 1, GL_FALSE, &(projection[0][0]));
 		}
 
 		void Unuse(const std::shared_ptr<ShaderProgram> sp)

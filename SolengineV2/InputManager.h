@@ -12,7 +12,6 @@ namespace SolengineV2
 	{
 	public:
 		InputManager() : mouseCoords(0), mouseWheel(0) {};
-		~InputManager() {};
 
 		//Using SDL keyIDs for now, would be better to wrap keyIDs in your own enum
 		//Changes the state of the key in the current map
@@ -36,8 +35,8 @@ namespace SolengineV2
 
 		void SetMouseCoords(int x, int y)
 		{
-			mouseCoords.x = (float)x;
-			mouseCoords.y = (float)y;
+			mouseCoords.x += (float)x;
+			mouseCoords.y += (float)y;
 		}
 
 		void SetMouseWheel(float y)
@@ -63,7 +62,7 @@ namespace SolengineV2
 		SolengineV2::GameState ProcessInput()
 		{
 			SetMouseWheel(0);
-			updatePreviousKeyMap();
+			updatePreviousFrame();
 
 			SDL_Event evnt;
 
@@ -75,7 +74,7 @@ namespace SolengineV2
 					return SolengineV2::GameState::EXIT;
 					break;
 				case SDL_MOUSEMOTION:
-					SetMouseCoords(evnt.motion.x, evnt.motion.y);
+					SetMouseCoords(evnt.motion.xrel, evnt.motion.yrel);
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					KeyDown(evnt.button.button);
@@ -93,27 +92,35 @@ namespace SolengineV2
 					KeyUp(evnt.key.keysym.sym);
 					break;
 				}
+
+				
 			}
 
 			return SolengineV2::GameState::PLAY;
 		}
 
 		glm::vec2 GetMouseCoords() { return mouseCoords; }
+		glm::vec2 GetMouseOffset() { return mouseCoords - previousMouseCoords; }
 		float GetMouseWheel() { return mouseWheel; }
+		float GetMouseWheelOffset() { return mouseWheel - previousMouseWheel; }
 
 	private:
 		std::unordered_map<unsigned int, bool> keyMap;
 		std::unordered_map<unsigned int, bool> previousKeyMap;
 		glm::vec2 mouseCoords;
-		float mouseWheel;
+		glm::vec2 previousMouseCoords{ 0.0f, 0.0f };
+		float mouseWheel, previousMouseWheel{ 0.0f };
 
 		//Copies the previous key states into a new map
-		void updatePreviousKeyMap()
+		void updatePreviousFrame()
 		{
 			for (auto& it : keyMap)
 			{
 				previousKeyMap[it.first] = it.second;
 			}
+
+			previousMouseCoords = mouseCoords;
+			previousMouseWheel = mouseWheel;
 		}
 	};
 }

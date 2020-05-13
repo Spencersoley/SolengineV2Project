@@ -26,15 +26,23 @@ class SelectableSystem
 	std::map<int, SelectableComponent> selectableMap{};
 
 public:
-	SelectableSystem(TransformSystem* ts, CameraSystem* cs, SolengineV2::InputManager* im) : transformSystem(ts), cameraSystem(cs), inputManager(im) {}
-
+	SelectableSystem(
+		TransformSystem* _transformSystem, 
+		CameraSystem* _cameraSystem, 
+		SolengineV2::InputManager* _inputManager
+	) 
+		: 
+		transformSystem(_transformSystem), 
+		cameraSystem(_cameraSystem), 
+		inputManager(_inputManager) 
+	{}
 
 	void AddComponent(int handle)
 	{
 		selectableMap.try_emplace(handle, SelectableComponent(transformSystem->GetLast()));
 	}
 
-	void Process()
+	void Process() const
 	{
 		if (inputManager->KeyState(SDL_BUTTON_LEFT))
 		{
@@ -66,7 +74,7 @@ public:
 		}
 	}
 
-	void DeleteComponent(int handle)
+	void DeleteComponent(int handle) 
 	{
 		selectableMap.erase(handle);
 	}

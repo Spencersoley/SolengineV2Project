@@ -28,6 +28,7 @@ namespace SolengineV2
 			int errorCode = picoPNG.decodePNG(decodedPNG, width, height, &(bufferedPNG[0]), bufferedPNG.size());
 			if (errorCode != 0)
 			{
+				throw std::invalid_argument("failed to decode png");
 				std::cout << "decodePNG failed with error: " + std::to_string(errorCode);
 			}
 

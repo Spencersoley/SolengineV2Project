@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)SolengineV2/;$(SolutionDir)deps/include/;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Debug/;$(SolutionDir)deps/lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -81,8 +81,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)SolengineV2/;$(SolutionDir)deps/include/;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)Debug/;$(SolutionDir)deps/lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,13 +157,13 @@
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="FoodSystem.h" />
     <ClInclude Include="HandleManager.h" />
-    <ClInclude Include="MakeSharedEnabler.h" />
     <ClInclude Include="HealthSystem.h" />
     <ClInclude Include="SelectableSystem.h" />
     <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="ColliderSystem.h" />
-    <ClInclude Include="GraphicsSystem.h" />
+    <ClInclude Include="SpriteSystem.h" />
     <ClInclude Include="StatSheet.h" />
+    <ClInclude Include="TextSystem.h" />
     <ClInclude Include="UserInputSystem.h" />
     <ClInclude Include="TransformSystem.h" />
     <ClInclude Include="VelocitySystem.h" />
