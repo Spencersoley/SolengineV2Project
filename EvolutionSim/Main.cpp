@@ -1,105 +1,146 @@
-
 #include <iostream>
 #include <SDL/SDL.h>
 #include <GL/glew.h>
+#include <set>
 
-#include <ResourceManager.h>
-#include <ShaderFactory.h>
+#include <ImageLoader.h>
+#include <ShaderCreator.h>
 #include <ShaderManager.h>
 #include <Window.h>
 #include <TimeManager.h>
 #include <InputManager.h>
 #include <SDLInit.h>
+#include <GeometryRenderer.h>
 
 #include "TransformSystem.h"
 #include "CameraSystem.h"
 #include "UserInputSystem.h"
 #include "ColliderSystem.h"
-#include "EntityManager.h"
 #include "VelocitySystem.h"
-#include "HandleManager.h"
 #include "SelectableSystem.h"
-#include "FoodSystem.h"
 #include "SurvivalSystem.h"
 #include "SpriteSystem.h"
-#include "TextSystem.h"
+#include "BeingManager.h"
+#include "GeneSystem.h"
+#include "GenerationSystem.h"
+#include "GUISystem.h"
+#include "DataSystem.h"
+#include "PartitionSystem.h"
 
-//multiple shaders?
-//UI logic
-//add FONTS
-//shader organisaiton
-//particles
+#include "Sceensize.h"
+#include "ShapeSystem.h"
 
-//const iterators?
+// change the way animals seek food - carnivores, herbivores will ignore the wrong food types
+// the right food types provide huge bonuses 
+
+// make strength do something
+
+// can we merge begin and new wave in some way?
+
+// compare inline vs non inline?
+
+// change data duplication system to a resource rather than a parameter?
+
+// selected entity plant saturation/fullness
+
+// choose active traits at start of simulation
+// make optional all traits through a configurationSystem
+
+// convert time system from nanosecond precision to microsecond precision - we don't need nano?
+
+// try being implementation of being manager
+
+constexpr double FRAMERATE_ADJUSTMENT = 0.00001;
+
+template <typename E>
+constexpr auto to_underlying(E e) noexcept
+{
+	return static_cast<std::underlying_type_t<E>>(e);
+}
 
 int main(int argc, char** argv)
 {
 	SolengineV2::initialiseSDL();
-	int screenHeight = 1000, screenWidth = 1000;
 
-	SolengineV2::Window                window("SolengineV2", screenWidth, screenHeight, SolengineV2::Colour(0, 0, 0, 255));
-	SolengineV2::IOManager             iOManager;
-	SolengineV2::ResourceManager       resourceManager(&iOManager);
-	SolengineV2::ShaderManager         shaderManager;
-	SolengineV2::ShaderFactory         shaderFactory(&shaderManager);
-	SolengineV2::TimeManager           timeManager(6000, true);
-	SolengineV2::InputManager          inputManager;
-
-	shaderFactory.CreateShader("colourShading", "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
-
-	EntityManager      entityManager;
-	HandleManager      handleManager;
-	TransformSystem    transformSystem; 
-	VelocitySystem     velocitySystem    (&transformSystem);
-	CameraSystem       cameraSystem      (&transformSystem, shaderManager.GetShader("colourShading"), &shaderManager, screenHeight, screenWidth); 
-	SelectableSystem   selectableSystem  (&transformSystem, &cameraSystem, &inputManager);
-	SpriteSystem       spriteSystem      (&transformSystem, &cameraSystem); 
-	HealthSystem       healthSystem      (&transformSystem);
-	TextSystem         textSystem        (&transformSystem, &cameraSystem, shaderManager.GetShader("colourShading"));
-	UserInputSystem    userInputSystem   (&transformSystem, &cameraSystem, &healthSystem, &spriteSystem, &inputManager);
-	FoodSystem         foodSystem        (&transformSystem);
-	SurvivalSystem     survivalSystem    (&transformSystem, &velocitySystem, &foodSystem, &spriteSystem, &textSystem);
-	ColliderSystem     colliderSystem    (&transformSystem, &survivalSystem);
-
-	spriteSystem.SetSelectionBoxTextureID(resourceManager.GetTexture("Textures/SelectionBox.png").ID);
-
-	entityManager.Init(
-		shaderManager.GetShader("colourShading"),
-		&resourceManager,
-		&transformSystem, 
-		&handleManager, 
-		&cameraSystem, 
-		&selectableSystem,
-		&spriteSystem, 
-		&textSystem,
-		&userInputSystem, 
-		&colliderSystem, 
-		&velocitySystem, 
-		&healthSystem, 
-	    &foodSystem,
-		&survivalSystem
-		);
-
-	float physicsSpeed = 1.0f;
-	while (true)
+	struct Shaders
 	{
-		int adjustedDeltaTicks = timeManager.GetDeltaTicks() * physicsSpeed;
-		
-		inputManager.ProcessInput();
-		entityManager.Process();
+		SolengineV2::ShaderProgram colourShading;
+		SolengineV2::ShaderProgram simpleGeometry;
+	} shaders;
 
-		userInputSystem.Process(adjustedDeltaTicks);	
-		velocitySystem.Process(adjustedDeltaTicks);
-		colliderSystem.Process();
-		selectableSystem.Process();
-		survivalSystem.Process(adjustedDeltaTicks);
+	struct Textures
+	{
+		SolengineV2::Texture circle;
+		SolengineV2::Texture background;
+	} textures;
+
+	SolengineV2::Window            window("SolengineV2", SCREEN_WIDTH, SCREEN_HEIGHT, SolengineV2::Colour(0, 0, 0, 255));
+	SolengineV2::ShaderManager     shaderManager;
+	SolengineV2::GeometryRenderer  renderer;
+	SolengineV2::TimeManager       timeManager(100000, true);
+	SolengineV2::InputManager      inputManager;
+
+	{
+		SolengineV2::IOManager         ioManager;
+		SolengineV2::ShaderCreator     shaderCreator(ioManager);
+		shaderCreator.createShader(shaders.colourShading, "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
+		shaderCreator.createShader(shaders.simpleGeometry, "Shaders/simpleGeometry.vert", "Shaders/simpleGeometry.frag", { "aPos" });
+
+		SolengineV2::ImageLoader       imageLoader(ioManager);
+		imageLoader.loadPNG(textures.circle, "Textures/Circle.png");
+		imageLoader.loadPNG(textures.background, "Textures/background1.png");
+	}
+
+	SolengineV2::GameState gameState{ SolengineV2::GameState::PLAY };
+
+	TransformSystem  transformSystem;
+	DataSystem       dataSystem;
+
+	PartitionSystem  partitionSystem(transformSystem);
+	VelocitySystem   velocitySystem(transformSystem);
+	CameraSystem     cameraSystem(transformSystem);
+	GeneSystem       geneSystem;
+	SelectableSystem selectableSystem(transformSystem);
+
+	SpriteSystem     spriteSystem(shaderManager, shaders.colourShading, cameraSystem, transformSystem, textures.background.ID);
+	SurvivalSystem   survivalSystem(transformSystem, velocitySystem, geneSystem, spriteSystem, partitionSystem);
+	ColliderSystem   colliderSystem(transformSystem, survivalSystem, geneSystem, partitionSystem, velocitySystem);
+	ShapeSystem      shapeSystem(renderer, shaderManager, shaders.simpleGeometry, transformSystem, cameraSystem, selectableSystem);
+	GenerationSystem generationSystem(selectableSystem, survivalSystem, dataSystem, geneSystem);
+
+	UserInputSystem  userInputSystem(inputManager, transformSystem, cameraSystem, selectableSystem);
+	GUISystem        guiSystem(window, velocitySystem, generationSystem, dataSystem, geneSystem, selectableSystem, survivalSystem);
+
+	//beings
+	BeingManager beingManager(textures.circle.ID);
+
+	srand((unsigned int)time(0));
+
+	generationSystem.begin(beingManager);
+	
+	while (gameState == SolengineV2::GameState::PLAY || gameState == SolengineV2::GameState::PAUSE)
+	{
+		long long deltaTime = timeManager.getDeltaTime();
+
+		userInputSystem.process(deltaTime* FRAMERATE_ADJUSTMENT, beingManager, gameState);
+
+		if (gameState != SolengineV2::GameState::PAUSE)
+		{
+			generationSystem.process(beingManager);
+			selectableSystem.process(beingManager);
+			velocitySystem.process(beingManager, deltaTime);
+			colliderSystem.process(beingManager, deltaTime);
+			survivalSystem.process(beingManager, deltaTime);
+		}
 
 		window.Clear();
-		spriteSystem.Process();
-		textSystem.Process();
+		spriteSystem.process(beingManager);
+		shapeSystem.process(beingManager);
 
+		guiSystem.process(beingManager, gameState);
+		
 		window.SwapBuffer();
-		timeManager.LimitFPS();
+		timeManager.limitFPS(true);
 	}
 
 	return 0;

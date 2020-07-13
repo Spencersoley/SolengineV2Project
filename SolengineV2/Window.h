@@ -2,7 +2,8 @@
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 #include <string>
-#include <vertex.h>
+#include "Vertex.h"
+#include <iostream>
 
 namespace SolengineV2 
 {
@@ -11,8 +12,7 @@ namespace SolengineV2
     class Window
     {
     public:
-        Window() : sdlWindow(nullptr), screenHeight(0), screenWidth(0) {};
-        Window(std::string windowName, int sw, int sh,  Colour col) : Window()
+        Window(std::string windowName, int sw, int sh,  Colour col) 
         {
             Init(windowName, sw, sh, col);
         }
@@ -32,11 +32,12 @@ namespace SolengineV2
             }
 
             //Set up our OpenGL context
-            SDL_GLContext glContext = SDL_GL_CreateContext(sdlWindow);
+            glContext = SDL_GL_CreateContext(sdlWindow);
             if (glContext == nullptr) 
             {
                 std::cout << "SDL_GL context could not be created!";
             }
+
 
             //Set up glew (optional but recommended)
             GLenum error = glewInit();
@@ -76,7 +77,10 @@ namespace SolengineV2
         int GetScreenWidth() { return screenWidth; }
         int GetScreenHeight() { return screenHeight; }
 
+        SDL_Window* getWindow() { return sdlWindow; }
+        SDL_GLContext& getContext() { return glContext; }
     private:
+        SDL_GLContext glContext;
         SDL_Window* sdlWindow = nullptr;
         int screenWidth, screenHeight;
     };

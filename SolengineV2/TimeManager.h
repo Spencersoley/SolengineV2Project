@@ -1,115 +1,93 @@
 #pragma once
+#include <chrono>
 #include <iostream>
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 #include <algorithm>
 
+#define SAMPLES 10
+
 namespace SolengineV2
 {
 	class TimeManager
 	{
+	private:
+		std::chrono::milliseconds desiredTicksPerFrame{};
+		bool trackFPS;
+		std::chrono::steady_clock::time_point endTime{};
+		std::chrono::steady_clock::time_point startTime{};
+		std::chrono::steady_clock::time_point previousStartTime{};
+
+		long long nanosPerFrame[SAMPLES]{};
+		long long frameCount = 0;
+
 	public:
-		TimeManager() : TimeManager(60, false) {}
-		TimeManager(unsigned int desiredFPS, bool track) : desiredTicks(1000 / (float)desiredFPS), trackFPS(track), startTicks(0) 
+		TimeManager(unsigned int maxFPS, bool track)
+			:
+			trackFPS(track)
 		{
-			prevTicks = SDL_GetTicks();
-
+			desiredTicksPerFrame = std::chrono::milliseconds(1000 / maxFPS);
+			previousStartTime = std::chrono::high_resolution_clock::now();
+			endTime = std::chrono::high_resolution_clock::now();
 		}
-		~TimeManager() {}
 
-		void LimitFPS(Uint32 desiredFrameTicks, bool track)
+		void limitFPS(bool track)
 		{
-			Uint32 frameTicks = SDL_GetTicks() - startTicks;
-
+			std::chrono::steady_clock::time_point endTime = now();
+			long long frameNano = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
+			std::chrono::milliseconds frameTicks = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(frameNano));
 			//Prevents frame finishing earlier and FPS breaking max fps
-			if (desiredFrameTicks > frameTicks)
+			if (desiredTicksPerFrame > frameTicks)
 			{
-				SDL_Delay(desiredFrameTicks - frameTicks);
+				SDL_Delay(std::chrono::duration_cast<std::chrono::milliseconds>(desiredTicksPerFrame - frameTicks).count());
 			}
 
 			if (track)
 			{
-				reportFPS();
+				//includes delay
+				reportFPS(std::chrono::duration_cast<std::chrono::nanoseconds>(now() - startTime).count());
 			}
-
-			startTicks = SDL_GetTicks();
 		}
 
-		//Allow overloaded
-		void LimitFPS() 
+		std::chrono::steady_clock::time_point now()
 		{
-			LimitFPS(desiredTicks, trackFPS);
+			return std::chrono::high_resolution_clock::now();
 		}
 
-		void LimitFPS(bool track)
+		//returns change in time in nanoseconds
+		long long getDeltaTime()
 		{
-			LimitFPS(desiredTicks, track);
-		}
-
-		Uint32 GetDeltaTicks()
-		{
-			Uint32 deltaTicks = SDL_GetTicks() - prevTicks;
-			prevTicks = SDL_GetTicks();
-			return deltaTicks;
+			startTime = now();
+			long long nanoSeconds = std::chrono::duration_cast<std::chrono::nanoseconds>(startTime - previousStartTime).count();
+			previousStartTime = startTime;
+			return nanoSeconds;
 		}
 
 	private:
-		Uint32 prevTicks;
-		unsigned int startTicks;
-		unsigned int desiredTicks;
-		bool trackFPS;
 
 		//Announces FPS every NUM_SAMPLES frames
-		void reportFPS()
+		void reportFPS(long long frameNS)
 		{
-			static const int NUM_SAMPLES = 10;
-			static Uint32 ticksPerFrame[NUM_SAMPLES];
-			static int frameCount = 0;
-
-
-			static Uint32 currentTicks;
-			static Uint32 prevTicks = SDL_GetTicks();
-
-			float ticksPerFrameTotal;
-			float ticksPerFrameAverage;
-			float FPSTracked;
-
-			//Grabs number of ticks(ms) passed
-			currentTicks = SDL_GetTicks();
-
-			//Stores up to 10 samples of milliseconds passed since the previous frame
-			ticksPerFrame[frameCount % NUM_SAMPLES] = currentTicks - prevTicks;
-
-			//Stores current milliseconds passed, for next fps calculation
-			prevTicks = currentTicks;
-
+			nanosPerFrame[frameCount % SAMPLES] = frameNS;
 			frameCount++;
-
-			//Resets the average frame time
-			ticksPerFrameTotal = 0;
-
-			//Calculates new average frame time
-			for (int i = 0; i < std::min(frameCount, NUM_SAMPLES); i++)
-			{
-				ticksPerFrameTotal += ticksPerFrame[i];
-			}
-
-			ticksPerFrameAverage = ticksPerFrameTotal / std::min(frameCount, NUM_SAMPLES);
-
-			//Sets _fps based on average frame time
-			if (ticksPerFrameAverage > 0.0f)
-			{
-				FPSTracked = 1000.0f / ticksPerFrameAverage;
-			}
-			else
-			{
-				FPSTracked = 0.0f;
-			}
 
 			//Announces fps every 10 cycles
 			if (frameCount % 10 == 0)
 			{
- 				std::cout << FPSTracked << std::endl;
+				//Calculates new average frame time
+				uint32_t frames = std::min(frameCount, (long long)SAMPLES);
+				long long nanosPerFrameTotal = 0;
+				for (uint32_t i = 0; i < frames; i++)
+				{
+					nanosPerFrameTotal += nanosPerFrame[i];
+				}
+				double nanosPerFrameAverage = nanosPerFrameTotal / frames;
+				double FPSTracked = 0.0f;
+				if (nanosPerFrameAverage > 0.0f)
+				{
+					FPSTracked = 1000000000 / nanosPerFrameAverage;
+				}
+				std::cout << FPSTracked << '\n';
 			}
 		}
 	};

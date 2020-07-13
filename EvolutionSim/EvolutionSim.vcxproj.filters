@@ -12,9 +12,6 @@
     <Filter Include="Source Files\Core">
       <UniqueIdentifier>{b19046ec-1aec-48fa-a684-8f80c3757e1e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Core\Data">
-      <UniqueIdentifier>{7b86aca6-aeb0-46ea-be52-170576f6beec}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Core\System">
       <UniqueIdentifier>{d88ce704-a101-4f7d-ab1c-742b45616279}</UniqueIdentifier>
     </Filter>
@@ -33,14 +30,17 @@
     <Filter Include="Source Files\Helper">
       <UniqueIdentifier>{13e602be-8c2d-444b-9dde-5fd5be7cedee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Core\Entity">
+      <UniqueIdentifier>{7b86aca6-aeb0-46ea-be52-170576f6beec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\Component">
+      <UniqueIdentifier>{35b1137c-00c2-46e1-a4af-d319e958db84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Core\Imgui">
+      <UniqueIdentifier>{ace46170-4521-4295-9bd5-432b4d8637c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HandleManager.h">
-      <Filter>Source Files\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="EntityManager.h">
-      <Filter>Source Files\Core</Filter>
-    </ClInclude>
     <ClInclude Include="CameraSystem.h">
       <Filter>Source Files\Core\System\Graphics</Filter>
     </ClInclude>
@@ -56,26 +56,59 @@
     <ClInclude Include="SelectableSystem.h">
       <Filter>Source Files\Core\System\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="FoodSystem.h">
-      <Filter>Source Files\Core\System\AI</Filter>
-    </ClInclude>
-    <ClInclude Include="HealthSystem.h">
-      <Filter>Source Files\Core\System\AI</Filter>
-    </ClInclude>
     <ClInclude Include="TransformSystem.h">
       <Filter>Source Files\Core\System\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="DuplicationData.h">
-      <Filter>Source Files\Core\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="StatSheet.h">
-      <Filter>Source Files\Core\Data</Filter>
     </ClInclude>
     <ClInclude Include="SpriteSystem.h">
       <Filter>Source Files\Core\System\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="TextSystem.h">
+    <ClInclude Include="MemoryPool.h">
+      <Filter>Source Files\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="BeingManager.h">
+      <Filter>Source Files\Core\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="SurivalComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="VelocityComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Math.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GenerationSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="GUISystem.h">
+      <Filter>Source Files\Core\System\Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultColours.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DataSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeSystem.h">
       <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="PartitionSystem.h">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="DataComponent.h">
+      <Filter>Source Files\Core\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +117,75 @@
     </ClCompile>
     <ClCompile Include="SurvivalSystem.h">
       <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_draw.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_opengl3.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_sdl.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_widgets.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="implot.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="implot_demo.cpp">
+      <Filter>Source Files\Core\Imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Sceensize.h">
+      <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="BeingManager.cpp">
+      <Filter>Source Files\Core\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSystem.cpp">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="GenerationSystem.cpp">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneSystem.cpp">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="PartitionSystem.cpp">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="SurvivalSystem.cpp">
+      <Filter>Source Files\Core\System\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="GUISystem.cpp">
+      <Filter>Source Files\Core\System\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInputSystem.cpp">
+      <Filter>Source Files\Core\System\Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraSystem.cpp">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="SelectableSystem.cpp">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="ShapeSystem.cpp">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteSystem.cpp">
+      <Filter>Source Files\Core\System\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="ColliderSystem.cpp">
+      <Filter>Source Files\Core\System\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="VelocitySystem.cpp">
+      <Filter>Source Files\Core\System\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="BeingCreateInfo.h">
+      <Filter>Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

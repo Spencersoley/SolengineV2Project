@@ -1,84 +1,29 @@
 #pragma once
-#include <vector>
-#include "TransformSystem.h"
-#include "../deps/include/glm/ext/vector_float2.hpp"
+#include "VelocityComponent.h"
+#include <glm\ext\vector_float2.hpp>
 
-class VelocityComponent
+class BeingManager;
+class TransformSystem;
+
+class VelocitySystem
 {
-private:
-	friend class VelocitySystem;
-	VelocityComponent(std::shared_ptr<TransformComponent> _transform, float _velocity, glm::vec2 _direction) 
-		: 
-		transform(_transform), 
-		velocity(_velocity), 
-		direction(_direction) 
-	{}
-
-	std::shared_ptr<TransformComponent> transform;
-	float velocity;
-	glm::vec2 direction;
-};
-
-class VelocitySystem 
-{
-	TransformSystem* transformSystem;
-
-	std::map<int, VelocityComponent> velocityMap{};
-
-	const float VELOCITY_MODIFIER = 0.1f;
-
-
 public:
-	VelocitySystem(TransformSystem* _transformSystem) 
-		: 
-		transformSystem(_transformSystem)
+	VelocitySystem(
+		TransformSystem& tformSys
+	) :
+		transformSystem(tformSys)
 	{}
 
-	void AddComponent(int handle, float velocity, glm::vec2 dir)
-	{
-		velocityMap.try_emplace(handle, VelocityComponent(transformSystem->GetLast(), velocity, dir));
-	}
+	void process(BeingManager& beings, long long dt) const;
 
-	void Process(int dt)
-	{
-		if (velocityMap.empty()) return;
-		// something something spatial partitioning
-		for (auto it = velocityMap.begin(); it != velocityMap.end(); ++it)
-		{
-			if (it->second.velocity != 0)
-			{
-				transformSystem->Translate(it->second.transform.get(), (it->second.direction * (it->second.velocity * dt * VELOCITY_MODIFIER)));
-			}
-		}
-	}
+	void setVelocity  (VelocityComponent& component, const float set)       const { component.velocity = set; }
+	void setDirection (VelocityComponent& component, const glm::vec2& set)  const { component.direction = set; }
 
-	void SetVelocityAndDirection(int handle, float vel, glm::vec2 dir)
-	{
-		for (auto it = velocityMap.find(handle); it != velocityMap.end(); it = velocityMap.end())
-		{
-			it->second.velocity = vel;
-			it->second.direction = dir;
-		}
-	}
+	float& getPhysicsSpeed    ()       { return physicsSpeed; }
+	float  getPhysicsSpeedVal () const { return physicsSpeed; }
 
-	void SetVelocity(int handle, float vel)
-	{
-		for (auto it = velocityMap.find(handle); it != velocityMap.end(); it = velocityMap.end())
-		{
-			it->second.velocity = vel;
-		}
-	}
+private:
+	TransformSystem& transformSystem;
 
-	void SetDirection(int handle, glm::vec2 dir)
-	{
-		for (auto it = velocityMap.find(handle); it != velocityMap.end(); it = velocityMap.end())
-		{
-			it->second.direction = dir;
-		}
-	}
-
-	void DeleteComponent(int handle)
-	{
-		velocityMap.erase(handle);
-	}
+	float physicsSpeed{ 10.0f };
 };

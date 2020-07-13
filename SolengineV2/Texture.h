@@ -1,9 +1,12 @@
 #pragma once
 #include <GL\glew.h>
 
-struct Texture
+namespace SolengineV2
 {
-	GLuint ID;
-	int width;
-	int height;
-};
+	struct Texture
+	{
+		GLuint ID;
+		int width;
+		int height;
+	};
+}

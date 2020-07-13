@@ -2,5 +2,5 @@
 
 namespace SolengineV2
 {
-	enum class GameState { PLAY, EXIT, PAUSE, TURNOVER };
+	enum class GameState { EXIT, PLAY, PAUSE };
 };

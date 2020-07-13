@@ -39,13 +39,7 @@
     <ClInclude Include="ImageLoader.h">
       <Filter>Source Files\Core\Textures</Filter>
     </ClInclude>
-    <ClInclude Include="PicoPNG.h">
-      <Filter>Source Files\Core\Textures</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
-      <Filter>Source Files\Core\Textures</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureCache.h">
       <Filter>Source Files\Core\Textures</Filter>
     </ClInclude>
     <ClInclude Include="ShaderProgram.h">
@@ -66,9 +60,6 @@
     <ClInclude Include="IOManager.h">
       <Filter>Source Files\Core</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceManager.h">
-      <Filter>Source Files\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Glyph.h">
       <Filter>Source Files\Core\Sprites</Filter>
     </ClInclude>
@@ -84,10 +75,11 @@
     <ClInclude Include="Vertex.h">
       <Filter>Source Files\Core</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="ShaderFactory.h">
+    <ClInclude Include="GeometryRenderer.h">
+      <Filter>Source Files\Core\Sprites</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderCreator.h">
       <Filter>Source Files\Core\Shaders</Filter>
-    </ClCompile>
+    </ClInclude>
   </ItemGroup>
 </Project>

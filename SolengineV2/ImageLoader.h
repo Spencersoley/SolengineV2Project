@@ -2,7 +2,7 @@
 #include <string>
 
 #include "Texture.h"
-#include "PicoPNG.h"
+#include <PICO/PicoPNG.h>
 #include "IOManager.h"
 
 namespace SolengineV2 
@@ -10,23 +10,21 @@ namespace SolengineV2
     class ImageLoader
     {
 	public:
-		ImageLoader(IOManager* IO) { iOManager = IO; }
-		~ImageLoader() {};
+		ImageLoader(IOManager& IO) : iOManager(IO) {}
 
 		// Uses IO manager to obtain the file buffer and PicoPNG to decode the buffer
 		// Gives the decoded buffer to openGL and sets textureID
 		// The texture ID is used to obtain texture from OpenGL
-		Texture LoadPNG(std::string filePath)
+		void loadPNG(Texture& texture, const std::string& filePath)
 		{
-			Texture texture = {};
-			std::vector<unsigned char> bufferedPNG = iOManager->ReadFileToVectorBuffer(filePath);
+			std::vector<unsigned char> bufferedPNG = iOManager.readFileToVectorBuffer(filePath);
 			std::vector<unsigned char> decodedPNG;
 			unsigned long width, height;
 		
 			//Using picoPNG ~ error code is non zero if decoding failed
 			//sets the decoded png, width, and height.
-			int errorCode = picoPNG.decodePNG(decodedPNG, width, height, &(bufferedPNG[0]), bufferedPNG.size());
-			if (errorCode != 0)
+			
+			if (int errorCode = picoPNG.decodePNG(decodedPNG, width, height, &(bufferedPNG[0]), bufferedPNG.size()); errorCode != 0)
 			{
 				throw std::invalid_argument("failed to decode png");
 				std::cout << "decodePNG failed with error: " + std::to_string(errorCode);
@@ -44,12 +42,10 @@ namespace SolengineV2
 
 			texture.width = width;
 			texture.height = height;
-
-			return texture;
 		}
 
 	private:
-		IOManager* iOManager;
+		IOManager& iOManager;
 		PicoPNG picoPNG;
     };
 }

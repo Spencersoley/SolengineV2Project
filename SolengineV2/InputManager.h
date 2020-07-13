@@ -33,33 +33,41 @@ namespace SolengineV2
 			return (KeyState(keyID) && !PreviousKeyState(keyID)) ? true : false;
 		}
 
-		void SetMouseCoords(int x, int y)
+		void UpdateMousePosition()
 		{
-			mouseCoords.x += (float)x;
-			mouseCoords.y += (float)y;
+			int x, y;
+			SDL_GetMouseState(&x, &y);
+			mouseCoords.x = x;
+			mouseCoords.y = y;
 		}
 
-		void SetMouseWheel(float y)
+		void SetMouseCoords(int x, int y)
 		{
-			mouseWheel = (float)y;
+			mouseCoords.x += x;
+			mouseCoords.y += y;
+		}
+
+		void SetMouseWheel(int y)
+		{
+			mouseWheel = y;
 		}
 
 		//Returns the state of the key id in the current map
-		bool KeyState(unsigned int keyID)
+		bool KeyState(unsigned int keyID) const
 		{
-			auto it = keyMap.find(keyID);
+			const auto it = keyMap.find(keyID);
 			return (it != keyMap.end()) ? it->second : false;
 		}
 
 		//Returns the state of the key id in the previous map
-		bool PreviousKeyState(unsigned int keyID)
+		bool PreviousKeyState(unsigned int keyID) const
 		{
-			auto it = previousKeyMap.find(keyID);
+			const auto it = previousKeyMap.find(keyID);
 			return (it != previousKeyMap.end()) ? it->second : false;
 		}
 
 		//Checks all queued events, changing their states accordingly
-		SolengineV2::GameState ProcessInput()
+		void ProcessInput(SolengineV2::GameState& state)
 		{
 			SetMouseWheel(0);
 			updatePreviousFrame();
@@ -71,10 +79,11 @@ namespace SolengineV2
 				switch (evnt.type)
 				{
 				case SDL_QUIT:
-					return SolengineV2::GameState::EXIT;
+					state = SolengineV2::GameState::EXIT;
 					break;
 				case SDL_MOUSEMOTION:
-					SetMouseCoords(evnt.motion.xrel, evnt.motion.yrel);
+					UpdateMousePosition();
+					//SetMouseCoords(evnt.motion.xrel, evnt.motion.yrel);
 					break;
 				case SDL_MOUSEBUTTONDOWN:
 					KeyDown(evnt.button.button);
@@ -91,25 +100,24 @@ namespace SolengineV2
 				case SDL_KEYUP:
 					KeyUp(evnt.key.keysym.sym);
 					break;
+					//case SDL_QUIT:
+                   //case : ... if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
 				}
-
-				
 			}
-
-			return SolengineV2::GameState::PLAY;
 		}
 
-		glm::vec2 GetMouseCoords() { return mouseCoords; }
-		glm::vec2 GetMouseOffset() { return mouseCoords - previousMouseCoords; }
-		float GetMouseWheel() { return mouseWheel; }
-		float GetMouseWheelOffset() { return mouseWheel - previousMouseWheel; }
+		glm::ivec2 GetMouseCoords() const { return mouseCoords; }
+		glm::ivec2 GetMouseOffset() const { return mouseCoords - previousMouseCoords; }
+		int GetMouseWheel() const { return mouseWheel; }
+		int GetMouseWheelOffset() const { return mouseWheel - previousMouseWheel; }
 
 	private:
+
 		std::unordered_map<unsigned int, bool> keyMap;
 		std::unordered_map<unsigned int, bool> previousKeyMap;
-		glm::vec2 mouseCoords;
-		glm::vec2 previousMouseCoords{ 0.0f, 0.0f };
-		float mouseWheel, previousMouseWheel{ 0.0f };
+		glm::ivec2 mouseCoords;
+		glm::ivec2 previousMouseCoords{ 0, 0};
+		int mouseWheel, previousMouseWheel{ 0 };
 
 		//Copies the previous key states into a new map
 		void updatePreviousFrame()

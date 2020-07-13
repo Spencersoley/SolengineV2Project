@@ -48,12 +48,14 @@
     <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -62,6 +64,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -78,6 +82,8 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -88,23 +94,55 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BeingCreateInfo.h" />
+    <ClCompile Include="BeingManager.cpp" />
+    <ClCompile Include="ColliderSystem.cpp" />
+    <ClCompile Include="DataSystem.cpp" />
+    <ClCompile Include="GenerationSystem.cpp" />
+    <ClCompile Include="GeneSystem.cpp" />
+    <ClCompile Include="GUISystem.cpp" />
+    <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="imgui_draw.cpp" />
+    <ClCompile Include="imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui_widgets.cpp" />
+    <ClCompile Include="implot.cpp" />
+    <ClCompile Include="implot_demo.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="PartitionSystem.cpp" />
+    <ClCompile Include="Sceensize.h" />
+    <ClCompile Include="CameraSystem.cpp" />
+    <ClCompile Include="SelectableSystem.cpp" />
+    <ClCompile Include="ShapeSystem.cpp" />
+    <ClCompile Include="SpriteSystem.cpp" />
+    <ClCompile Include="SurvivalSystem.cpp" />
     <ClCompile Include="SurvivalSystem.h" />
+    <ClCompile Include="UserInputSystem.cpp" />
+    <ClCompile Include="VelocitySystem.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DuplicationData.h" />
-    <ClInclude Include="EntityManager.h" />
-    <ClInclude Include="FoodSystem.h" />
-    <ClInclude Include="HandleManager.h" />
-    <ClInclude Include="HealthSystem.h" />
+    <ClInclude Include="DataComponent.h" />
+    <ClInclude Include="DataSystem.h" />
+    <ClInclude Include="DefaultColours.h" />
+    <ClInclude Include="GenerationSystem.h" />
+    <ClInclude Include="BeingManager.h" />
+    <ClInclude Include="GeneComponent.h" />
+    <ClInclude Include="GUISystem.h" />
+    <ClInclude Include="Math.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="SelectableSystem.h" />
     <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="ColliderSystem.h" />
+    <ClInclude Include="ShapeSystem.h" />
+    <ClInclude Include="PartitionSystem.h" />
+    <ClInclude Include="SpriteComponent.h" />
     <ClInclude Include="SpriteSystem.h" />
-    <ClInclude Include="StatSheet.h" />
-    <ClInclude Include="TextSystem.h" />
+    <ClInclude Include="GeneSystem.h" />
+    <ClInclude Include="SurivalComponent.h" />
+    <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="UserInputSystem.h" />
     <ClInclude Include="TransformSystem.h" />
+    <ClInclude Include="VelocityComponent.h" />
     <ClInclude Include="VelocitySystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

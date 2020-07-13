@@ -4,200 +4,49 @@
 #include <glm\ext\vector_float2.hpp>
 #include <algorithm>
 #include <memory>
-#include <iostream>
-#include <map>
-//#include "MakeSharedEnabler.h"
+#include "MemoryPool.h"
+#include <array>
 
-enum class TransformState : unsigned int { ACTIVE, INACTIVE, DELETE };
+#include "TransformComponent.h"
 
-class TransformComponent
+constexpr float ARENA_SIZE = 1600.0f;
+
+class TransformSystem
 {
-private:
-	friend class TransformSystem;
-	TransformComponent(glm::vec3 pos, glm::vec3 dims)
-		:
-		Pos(pos),
-		Dims(dims),
-		IsUpdated(true),
-		IsSelected(false),
-		state(TransformState::ACTIVE),
-		IsVisible(true)
-	{}
-
-	TransformState state;
-	glm::vec3 Pos;
-	glm::vec3 Dims;
-	std::map<int, std::shared_ptr<TransformComponent>> Children{};
-	bool IsUpdated;
-	bool IsSelected;
-	bool IsVisible;
-};
-
-class TransformSystem //Perhaps this is simply a gameobject manager?
-{
-	std::map<int, std::shared_ptr<TransformComponent>> transformMap{};
-	std::shared_ptr<TransformComponent> lastTransform;
-	std::vector<int> handlesToDelete;
-
 public:
-	std::shared_ptr<TransformComponent> GetLastTransform() { return lastTransform; } //creation optimisation
-	std::vector<int>::iterator GetHandlesToDeleteBegin() { return handlesToDelete.begin(); } //is there any merit to only exposing begin/end iterators?
-	std::vector<int>::iterator GetHandlesToDeleteEnd() { return handlesToDelete.end(); }
-	void ClearHandles() { handlesToDelete.clear(); }
-
-	void AddComponent(int handle, glm::vec3 pos, glm::vec3 dims)
+	enum class Transform
 	{
-		std::shared_ptr<TransformComponent> temp (new TransformComponent(pos, dims));// makeSharedComponent<TransformComponent>(pos, dims);
-		transformMap.insert({ handle, temp }); //prefer insertion for shared_ptrs
-		lastTransform = temp;
-	}
-
-	bool AddChild(int parentHandle, int childHandle, glm::vec3 pos, glm::vec3 dims)
-	{
-		return AddChild(parentHandle, childHandle, transformMap, pos, dims);
-	}
-
-	bool AddChild(int parentHandle, int childHandle, std::map<int, std::shared_ptr<TransformComponent>>& map, glm::vec3 pos, glm::vec3 dims)
-	{
-		for (auto i = map.begin(); i != map.end(); ++i)
-		{
-			if (i->first == parentHandle)
-			{
-			    std::shared_ptr<TransformComponent> temp (new TransformComponent (i->second->Pos + pos, dims));
-				i->second->Children.insert(std::pair<int, std::shared_ptr<TransformComponent>>(childHandle, temp));
-				lastTransform = temp;
-				return true;
-			}
-			else
-			{
-				if (AddChild(parentHandle, childHandle, i->second->Children, pos, dims)) return true;
-			}
-		}
-
-		return false;
-	}
-
-	std::shared_ptr<TransformComponent> GetLast()
-	{
-		return lastTransform;
-	}
-
-	std::shared_ptr<TransformComponent> Get(int handle)
-	{
-		return Get(handle, transformMap);
-	}
-
-	std::shared_ptr<TransformComponent> Get(int handle, std::map<int, std::shared_ptr<TransformComponent>> map)
-	{
-		for (auto i = map.begin(); i != map.end(); ++i)
-		{
-			if (i->first == handle)
-			{
-				return i->second;
-			}
-			else
-			{
-				std::shared_ptr<TransformComponent> t = Get(handle, i->second->Children);
-				if (t != nullptr) return t;
-			}
-		}
-
-		return nullptr;
-	}
-
-	void SetToBeDeleted(int handle) // ACTUALLY deletes it from tree, and sets handles to be deleted
-	{
-		Delete(handle, transformMap);
-	}
-
-	bool Delete(int handle, std::map<int, std::shared_ptr<TransformComponent>>& map) //finds transform by handle
-	{
-		for (auto i = map.begin(); i != map.end(); ++i)
-		{
-			if (i->first == handle) // found the handle
-			{
-				DeleteChildren(i->second);
-				map.erase(i);
-				handlesToDelete.push_back(handle);
-				return true; // deletion complete, break the loop
-			}
-			else
-			{
-				if (Delete(handle, i->second->Children)) return true; // completion will propagate, otherwise continues 
-			}
-		}
-
-		return false;
-	}
-
-	void DeleteChildren(std::shared_ptr<TransformComponent> transform) //deletes transform's children
-	{
-		for (auto it = transform->Children.begin(); it != transform->Children.end();)
-		{
-			DeleteChildren(it->second);
-			handlesToDelete.push_back(it->first);
-			it = transform->Children.erase(it);
-		}
-	}
-
-	void Slice(TransformComponent* TC, float sliceSize)
-	{
-		float leftSide = TC->Pos.x - (TC->Dims.x / 2.0f);
-
-		TC->Dims.x *= sliceSize;
-		TC->Pos.x = leftSide + TC->Dims.x / 2.0f;
-	}
-
-	void Translate(TransformComponent* TC, glm::vec2 transVec)
-	{
-		TC->Pos.x += transVec.x;
-		TC->Pos.y += transVec.y;
-		TC->IsUpdated = true;
-
-		for (auto it = TC->Children.begin(); it != TC->Children.end(); ++it)
-		{
-			Translate(it->second.get(), transVec);
-		}
-	}
-
-	glm::vec3 GetPos(TransformComponent* TC)
-	{
-		return TC->Pos;
+		CAMERA,
+		BACKGROUND,
+		SELECTION_BOX,
+		ARRAY_SIZE
 	};
 
-	float GetDistFromCentre(TransformComponent* TC)
-	{
-		return sqrt((TC->Pos.x * TC->Pos.x) + (TC->Pos.y * TC->Pos.y));
-	}
+	const glm::vec2& getPos  (const TransformComponent& component) const { return component.pos;  }
+	const glm::vec2& getDims (const TransformComponent& component) const { return component.dims; }
 
-	glm::vec3 GetDims(TransformComponent* TC)
-	{
-		return TC->Dims;
+	const glm::vec2& getCameraPos()            const { return getPos  (getCComponent(Transform::CAMERA        )); }
+	const glm::vec2& getBackgroundPos()        const { return getPos  (getCComponent(Transform::BACKGROUND    )); }
+	const glm::vec2& getBackgroundDims()       const { return getDims (getCComponent(Transform::BACKGROUND    )); }
+	const glm::vec2& getSelectionBoxPos()      const { return getPos  (getCComponent(Transform::SELECTION_BOX )); }
+	const glm::vec2& getSelectionBoxDims()     const { return getDims (getCComponent(Transform::SELECTION_BOX )); }
+
+	void setSelectionBoxPos(const glm::vec2& pos) { setPos(getComponent(Transform::SELECTION_BOX), pos); }
+	void translate(TransformComponent& component, const glm::vec2& transVec) const { component.pos += transVec; }
+	void translateCamera(const glm::vec2& transVec) { translate(getComponent(Transform::CAMERA), transVec); }
+
+private:
+	TransformComponent& getComponent(Transform handle) { return components[static_cast<int>(handle)]; }
+	const TransformComponent& getCComponent(Transform handle) const { return components[static_cast<int>(handle)]; }
+	void setPos(TransformComponent& component, const glm::vec2& pos) const { component.pos = pos; }
+
+	float getDistFromCentre(const TransformComponent& component) const { return getDist(getPos(component), glm::vec2(0.0f)); }
+	float getDist(const glm::vec2& a, const glm::vec2& b) const { return static_cast<float>(sqrt(static_cast<double>(a.x) * static_cast<double>(b.x)) + static_cast<double>(a.y) * static_cast<double>(b.y)); }
+
+	std::array<TransformComponent, static_cast<int>(Transform::ARRAY_SIZE)> components
+	{ 
+		TransformComponent(glm::vec2(0.0f),  glm::vec2(0.0f)),            //CAMERA
+		TransformComponent(glm::vec2(0.0f),  glm::vec2(ARENA_SIZE)),      //BACKGROUND
+		TransformComponent(glm::vec2(50.0f), glm::vec2(30.0f))            //SELECITONBOX
 	};
-
-	bool GetIsUpdated(TransformComponent* TC)
-	{
-		return TC->IsUpdated;
-	}
-
-	bool GetIsSelected(TransformComponent* TC)
-	{
-		return TC->IsSelected;
-	}
-
-	// Conditional visibility component??
-	bool GetVisibility(TransformComponent* TC)
-	{
-		return TC->IsVisible;
-	}
-
-	void SetVisibility(TransformComponent* TC, bool set)
-	{
-		TC->IsVisible = set;
-	}
-
-	void SetIsSelected(TransformComponent* TC, bool set)
-	{
-		TC->IsSelected = set;
-	}
 };

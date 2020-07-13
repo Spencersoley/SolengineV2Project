@@ -84,7 +84,7 @@ namespace SolengineV2
 		{
 			// Set up all pointers for fast sorting
 			glyphPointers.resize(glyphs.size());
-			for (size_t i = 0; i < glyphs.size(); i++)
+			for (uint32_t i = 0; i < glyphs.size(); i++)
 			{
 				glyphPointers[i] = &glyphs[i];
 			}
@@ -98,7 +98,7 @@ namespace SolengineV2
 			// vertex attribute pointers and it binds the VBO
 			glBindVertexArray(vao);
 
-			for (size_t i = 0; i < renderBatches.size(); i++) 
+			for (uint32_t i = 0; i < renderBatches.size(); i++) 
 			{
 				glBindTexture(GL_TEXTURE_2D, renderBatches[i].texture);
 				glDrawArrays(GL_TRIANGLES, renderBatches[i].offset, renderBatches[i].numVertices);
@@ -142,7 +142,7 @@ namespace SolengineV2
 			offset += 6;
 
 			//Add all the rest of the glyphs
-			for (size_t cg = 1; cg < glyphPointers.size(); cg++)
+			for (uint32_t cg = 1; cg < glyphPointers.size(); cg++)
 			{
 				// Check if this glyph can be part of the current batch
 				if (glyphPointers[cg]->Texture != glyphPointers[cg - 1]->Texture)

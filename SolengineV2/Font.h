@@ -85,8 +85,8 @@ namespace SolengineV2
 			std::vector<int>* bestPartition = nullptr;
 			while (rows <= m_regLength)
 			{
-				h = rows * (padding + m_fontHeight) + padding;
-				auto gr = createRows(glyphRects, m_regLength, rows, padding, w);
+				h = rows * (static_cast<int>(padding) + m_fontHeight) + static_cast<int>(padding);
+				auto gr = createRows(glyphRects, m_regLength, rows, static_cast<int>(padding), w);
 
 				// Desire a power of 2 texture
 				w = closestPow2(w);
@@ -132,11 +132,11 @@ namespace SolengineV2
 
 			// Now draw all the glyphs
 			SDL_Color fg = { 255, 255, 255, 255 };
-			int ly = padding;
+			int ly = static_cast<int>(padding);
 			for (int ri = 0; ri < bestRows; ri++)
 			{
-				int lx = padding;
-				for (size_t ci = 0; ci < bestPartition[ri].size(); ci++)
+				int lx = static_cast<int>(padding);
+				for (uint32_t ci = 0; ci < bestPartition[ri].size(); ci++)
 				{
 					int gi = bestPartition[ri][ci];
 
@@ -163,13 +163,13 @@ namespace SolengineV2
 					SDL_FreeSurface(glyphSurface);
 					glyphSurface = nullptr;
 
-					lx += glyphRects[gi].z + padding;
+					lx += glyphRects[gi].z + static_cast<int>(padding);
 				}
-				ly += m_fontHeight + padding;
+				ly += m_fontHeight + static_cast<int>(padding);
 			}
 
 			// Draw the unsupported glyph
-			int rs = padding - 1;
+			int rs = static_cast<int>(padding) - 1;
 			int* pureWhiteSquare = new int[rs * rs];
 			memset(pureWhiteSquare, 0xffffffff, rs * rs * sizeof(int));
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rs, rs, GL_RGBA, GL_UNSIGNED_BYTE, pureWhiteSquare);

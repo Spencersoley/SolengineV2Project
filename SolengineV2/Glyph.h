@@ -9,8 +9,6 @@ namespace SolengineV2
 	class Glyph
 	{
 	public:
-		Glyph() :
-			Depth(0) {};
 		Glyph(const glm::vec4& destRect, const glm::vec4& uvRect, GLuint Texture, float Depth, const Colour& colour) :
 			Texture(Texture),
 			Depth(Depth)

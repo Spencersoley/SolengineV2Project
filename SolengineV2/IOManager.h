@@ -13,7 +13,7 @@ namespace SolengineV2
 	{
 	public:
 		//Turns file into buffer for image loading
-		std::vector<unsigned char> ReadFileToVectorBuffer(std::string filePath)
+		std::vector<unsigned char> readFileToVectorBuffer(std::string filePath)
 		{
 			std::vector<unsigned char> buffer;
 
@@ -44,7 +44,7 @@ namespace SolengineV2
 		}
 
 		//Turns file into string
-		std::string ReadFileToStringBuffer(std::string filePath)
+		std::string readFileToStringBuffer(std::string filePath) const
 		{
 			std::string buffer;
 
@@ -76,7 +76,7 @@ namespace SolengineV2
 		}
 
 		//Turns a file into a vector of strings
-		std::vector<std::string> ReadFileToStringVector(const std::string& fileName)
+		std::vector<std::string> readFileToStringVector(const std::string& fileName)
 		{
 			std::ifstream file;
 			file.open(fileName);

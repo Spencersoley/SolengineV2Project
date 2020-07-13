@@ -1,218 +1,94 @@
 #pragma once
 #include <algorithm>
-#include "TransformSystem.h"
-#include "FoodSystem.h"
-#include "VelocitySystem.h"
-#include "DuplicationData.h"
-#include "StatSheet.h"
-#include "SpriteSystem.h"
-#include "TextSystem.h"
+#include <vector>
+#include <glm\ext\vector_float2.hpp>
 
+#include "DefaultColours.h"
+#include "SurivalComponent.h"
+#include "GeneComponent.h"
 
-class SurvivalComponent
-{
-private:
-	friend class SurvivalSystem;
-	SurvivalComponent(std::shared_ptr<TransformComponent> _transform, StatSheet _statSheet)
-		:
-		transform(_transform),
-		isFed(0),
-		isHome(0),
-		statSheet(_statSheet)
-	{}
-
-	StatSheet statSheet;
-	std::shared_ptr<TransformComponent> transform;
-	bool isHome;   // collider system knows of survival system, thus it can set isHome on collision with home
-	bool isFed;    // Collider system knows of survival system, thus it can set isFed on collision with food
-};
+struct DuplicationData;
+class TransformSystem;
+class PartitionSystem;
+class VelocitySystem;
+class GeneSystem;
+class SpriteSystem;
+class BeingManager;
 
 class SurvivalSystem
 {
-	TransformSystem* transformSystem;
-	FoodSystem* foodSystem;
-	VelocitySystem* velocitySystem;
-	SpriteSystem* spriteSystem;
-	TextSystem* textSystem;
-
-	std::map<int, SurvivalComponent*> hungryMap{};
-	std::map<int, SurvivalComponent*> homeseekingMap{};
-	std::map<int, SurvivalComponent*> awaitingMap{};
-
-	int waveCount = 0;
-	int waveTextHandle = -1;
+	using Trait = GeneComponent::Trait;
+	using BeingType = GeneComponent::BeingType;
 
 public:
 	SurvivalSystem(
-		TransformSystem* _transformSystem,
-		VelocitySystem* _velocitySystem,
-		FoodSystem* _foodSystem,
-		SpriteSystem* _spriteSystem,
-		TextSystem* _textSystem
-	)
-		:
-		transformSystem(_transformSystem),
-		foodSystem(_foodSystem),
-		velocitySystem(_velocitySystem),
-		spriteSystem(_spriteSystem),
-		textSystem(_textSystem)
+		const TransformSystem& tformSys,
+		VelocitySystem& velSys,
+		GeneSystem& geneSys,
+		SpriteSystem& spriteSys,
+		PartitionSystem& partitionSys
+	) :
+		transformSystem(tformSys),
+		velocitySystem(velSys),
+		geneSystem(geneSys),
+		spriteSystem(spriteSys),
+		partitionSystem(partitionSys)
 	{}
-	~SurvivalSystem()
+
+	bool getIsAlive(const SurvivalComponent& component) const { return component.isAlive; }
+	bool getExists(const SurvivalComponent& component) const { return component.exists; }
+	bool getWaveOver() const { return waveOver; }
+	void setWaveOver(const bool set) { waveOver = set; }
+	SurvivalState getSurvivalState(const SurvivalComponent& component) const { return component.state; }
+	void setSurvivalState(SurvivalComponent& component, const SurvivalState state) const { component.state = state; }
+	void setIsAlive(SurvivalComponent& component, const bool isAlive) const { component.isAlive = isAlive; }
+	void setExists(SurvivalComponent& component, const bool exists) const { component.exists = exists; }
+	float getBeingEnergy(const SurvivalComponent& component) const { return component.energy; }
+	float getBeingFullness(const SurvivalComponent& component) const { return component.fullness; }
+	void modifyFullness(SurvivalComponent& component, const float modify) const { component.fullness += modify; }
+
+	void eatFood(SurvivalComponent& survivalA, SurvivalComponent& survivalB, const float maxFullness, float modify) const;
+
+	void process(BeingManager& beings, long long dt);
+
+	std::vector<uint32_t> compileToDelete(const BeingManager& beings);
+
+	// If anything is not alive, it won't mutate - therefore it's food
+	void replicate(const BeingManager& beings, std::vector<DuplicationData>& duplicationData) const;
+
+	// called from collider system
+	void eating(float dt, BeingManager& beings, const uint32_t animalHandle, const uint32_t foodHandle);
+
+private:
+	const TransformSystem& transformSystem;
+	const VelocitySystem& velocitySystem;
+	GeneSystem& geneSystem;
+	SpriteSystem& spriteSystem; //for changing colour of dead entities
+	PartitionSystem& partitionSystem;
+
+	bool huntOver = false;
+	bool waveOver = false;
+
+	enum class WaveState
 	{
-		for (auto kvp : hungryMap)
-		{
-			delete kvp.second;
-		}
-		for (auto kvp : homeseekingMap)
-		{
-			delete kvp.second;
-		}
-		for (auto kvp : awaitingMap)
-		{
-			delete kvp.second;
-		}
-	}
+		NOTHING_ACTIVE = 1 << 0,
+		FOOD_ACTIVE = 1 << 1,
+		SEARCHERS_ACTIVE = 1 << 2,
+		RETURNERS_ACTIVE = 1 << 3,
+	};
 
-	std::vector<DuplicationData> DuplicationDataVec{};
+	glm::vec2 findNearestFoodToPoint(const glm::vec2& point, const BeingManager& beings, const std::vector<uint32_t>& foodHandles) const;
 
-	void AddComponent(int handle, StatSheet statSheet)
-	{
-		SurvivalComponent* surv = new SurvivalComponent(transformSystem->GetLast(), statSheet);
-		hungryMap.try_emplace(handle, surv);
-		spriteSystem->SetColour(handle, { 255, 255, 255, 255 });
-	}
+	float evaluateDietaryBonus(const BeingType foodType, float dietType) const;
 
-	void Process(int adjustedDeltaTicks)
-	{
-		bool noFood = foodSystem->NoFood();
+	void seekFood(BeingManager& beings, const uint32_t beingHandle, const std::vector<uint32_t>& foodHandles) const;
 
-		for (auto it = hungryMap.begin(); it != hungryMap.end(); )
-		{
-			if (it->second->isFed) //set in collider
-			{
-				homeseekingMap.insert({ it->first, it->second });
-				SeekHome(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks, it->second->statSheet.Speed); //sets off for home
-				SetIsHome(it->first, false);
-				//graphicsSystem->SetColour(it->first, { 0, 255, 0, 255 });
-				hungryMap.erase(it++);
-			}
-			else
-			{
-				SeekFood(it->first, transformSystem->GetPos(it->second->transform.get()), adjustedDeltaTicks, it->second->statSheet.Speed); //repeatedly seeks nearest food
-				if (noFood) spriteSystem->SetColour(it->first, { 255, 0, 0, 255 });
-				++it;
-			}
-		}
+	void seekHome(BeingManager& beings, const uint32_t beingHandle) const;
 
-		for (auto it = homeseekingMap.begin(); it != homeseekingMap.end(); )
-		{
-			if (it->second->isHome) //set in collider
-			{
-				awaitingMap.insert({ it->first, it->second });
-				velocitySystem->SetVelocity(it->first, 0.0f);
-				//graphicsSystem->SetColour(it->first, { 0, 255, 255, 255 });
-				homeseekingMap.erase(it++);
-			}
-			else
-			{
-				++it;
-			}
-		}
+	//true when energy is depleted
+	bool depleteEnergy(SurvivalComponent& component, float depletion) const;
 
-	    if ((noFood && !homeseekingMap.size()) || IsEveryoneHomeAndFed())
-		{
-			KillUnfed();
+	void wait(BeingManager& beings, const uint32_t beingHandle) const;
 
-			textSystem->UpdateText(waveTextHandle, std::to_string(++waveCount));
-
-			SetAllAwaitingFed(false); // sets all as unfed
-			for (auto it = awaitingMap.begin(); it != awaitingMap.end(); )
-			{
-				hungryMap.insert({ it->first, it->second });
-				StatSheet inherited = it->second->statSheet;
-				float r = -0.02f + (float)(rand()) / (float)(RAND_MAX / 0.1f);
-				inherited.Speed += r;
-				if (inherited.Speed < 0.02f) inherited.Speed = 0.02f;
-				//else if (inherited.Speed > 1.0f) inherited.Speed = 1.0f;
-				DuplicationDataVec.push_back(DuplicationData(transformSystem->GetPos(it->second->transform.get()), inherited)); //add to duplication data
-				awaitingMap.erase(it++);
-			}
-		}
-	}
-
-	void SeekFood(int handle, glm::vec3 position, int adjustedDeltaTicks, float speed) const
-	{
-		if (foodSystem->NoFood())
-		{
-			velocitySystem->SetVelocity(handle, 0.0f);
-			return;
-		}
-
-		glm::vec3 nearestFood = foodSystem->FindNearestFoodToPoint(position);
-		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB(position, nearestFood));
-	}
-
-	glm::vec2 directionAToB(glm::vec3 A, glm::vec3 B) const
-	{
-		return glm::normalize(glm::vec2{ B.x - A.x, B.y - A.y });
-	}
-
-	void SeekHome(int handle, glm::vec3 position, int adjusteddeltaTicks, float speed) const
-	{
-		velocitySystem->SetVelocityAndDirection(handle, speed, directionAToB({ 0.0f, 0.0f, 0.0f }, position));
-	}
-
-	void SetIsHome(int handle, bool set) 
-	{
-		auto it = homeseekingMap.find(handle);
-		if (it != homeseekingMap.end())
-		{
-			homeseekingMap[handle]->isHome = set;
-		}
-	}
-
-	bool IsEveryoneHomeAndFed() const
-	{
-		return (!hungryMap.size() && !homeseekingMap.size());
-	}
-
-	bool IsEveryoneHome() const
-	{
-		return !homeseekingMap.size();
-	}
-
-	void KillUnfed() 
-	{
-		for (auto it = hungryMap.begin(); it != hungryMap.end(); )
-		{
-			transformSystem->SetToBeDeleted(it->first);
-			hungryMap.erase(it++);
-		}
-	}
-
-	void SetFed(int handle, bool set) const
-	{
-		auto it = hungryMap.find(handle);
-		if (it != hungryMap.end())
-		{
-			it->second->isFed = set;
-		}
-	}
-
-	void SetAllAwaitingFed(bool set) const
-	{
-		for (auto it = awaitingMap.begin(); it != awaitingMap.end(); ++it)
-		{
-			it->second->isFed = set;
-		}
-	}
-
-	void DeleteComponent(int handle) 
-	{
-		hungryMap.erase(handle);
-		homeseekingMap.erase(handle);
-		awaitingMap.erase(handle);
-	}
-
-	void SetWaveTextHandle(int handle) { waveTextHandle = handle; }
+	void killSearchers(BeingManager& beings) const;
 };

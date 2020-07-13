@@ -26,13 +26,13 @@ namespace SolengineV2
         //inside of another struct or class, it is called composition. This is
         //layed out exactly the same in memory as if we had a float position[2],
         //but doing it this way makes more sense.
-        Position Pos;
+        Position Pos{};
 
         //4 bytes for r g b a color.
-        Colour Col;
+        Colour Col{};
 
         //UV texture coordinates.
-        UVCoords UV;
+        UVCoords UV{};
         
         void SetPosition(float x, float y) 
         {
