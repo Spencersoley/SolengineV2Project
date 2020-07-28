@@ -1,5 +1,9 @@
 #pragma once
+#include <glm\ext\vector_float2.hpp>
+#include <glm\ext\matrix_float4x4.hpp>
 
+class CameraComponent;
+class TransformComponent;
 class TransformSystem;
 
 class CameraSystem
@@ -9,23 +13,17 @@ public:
 		const TransformSystem& tformSys
 	);
 
-	float            getCameraScale() const { return scale; }
-	const glm::mat4& getProjectionMatrix() const { return projectionMatrix; }
-	const glm::mat4& getUIMatrix() const { return uiMatrix; }
+	float            getCameraScale(const CameraComponent& component) const;
+	const glm::mat4& getProjectionMatrix(const CameraComponent& component) const;
 
-	void updateCameraMatrices();
+	void updateCameraMatrices(CameraComponent& camera, const TransformComponent& cameraTransform) const;
 
-	void zoom(float zoom);
+	void setHasMoved(CameraComponent& camera, bool set) const;
 
-	glm::vec2 convertScreenToWorld(const glm::vec2& screenCoords) const;
+	void zoom(CameraComponent& camera, float zoom);
+
+	glm::vec2 convertScreenToWorld(const CameraComponent& camera, const TransformComponent& cameraTransform, const glm::vec2& screenCoords) const;
 
 private:
 	const TransformSystem& transformSystem;
-
-	glm::mat4 orthoMatrix{};
-	glm::mat4 projectionMatrix{ 0.0f };
-	glm::mat4 uiMatrix{};
-	float scale{ 0.6f };
-	bool cameraHasZoomed = true;
-	glm::vec2 previousCameraPosition{};
 };

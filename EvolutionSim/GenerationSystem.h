@@ -1,47 +1,68 @@
 ﻿#pragma once
-#include <cstdint>
 
 constexpr int INITIAL_FOOD_COUNT = 25;
 
-class DataSystem;
-class SelectableSystem;
-class SurvivalSystem;
 class BeingManager;
+class ColliderSystem;
+class DataSystem;
 class GeneSystem;
+class OverlaySystem;
+class SelectableSystem;
+class SpriteSystem;
+class SurvivalSystem;
+class TextureSystem;
+class TransformSystem;
+class VelocitySystem;
 
 class GenerationSystem
 {
 public:
 	GenerationSystem(
-		SelectableSystem& selSys,
-		SurvivalSystem& survSys,
+		ColliderSystem& colSys,
 		DataSystem& dataSys,
-		const GeneSystem& geneSys
+		const GeneSystem& geneSys,
+		const OverlaySystem& overlaySys,
+		SelectableSystem& selSys,
+		const SpriteSystem& spriteSys,
+		SurvivalSystem& survSys,
+		const TextureSystem& textureSys,
+		const TransformSystem& tformSys
 	) :
-		selectableSystem(selSys),
-		survivalSystem(survSys),
+		colliderSystem(colSys),
 		dataSystem(dataSys),
-		geneSystem(geneSys)
+		geneSystem(geneSys),
+		overlaySystem(overlaySys),
+		selectableSystem(selSys),
+		spriteSystem(spriteSys),
+		survivalSystem(survSys),
+		textureSystem(textureSys),
+		transformSystem(tformSys)
 	{}
 
 	int& getFoodPerGeneration() { return foodPerGeneration; } //int& nonconst for ImGui slider
-	uint32_t getWaveCount() const { return waveCount; }
-	uint32_t getAnimalCount() const { return animalCount; }
-	uint32_t getPlantCount() const { return plantCount; }
+	int getWaveCount() const { return waveCount; }
+	int getAnimalCount() const { return animalCount; }
+	int getPlantCount() const { return plantCount; }
 
 	void begin(BeingManager& beings);
-	void process(BeingManager& beings);
+	void update(BeingManager& beings);
 
 private:
-	SelectableSystem& selectableSystem;
-	SurvivalSystem& survivalSystem;
+
+	ColliderSystem& colliderSystem;
 	DataSystem& dataSystem;
 	const GeneSystem& geneSystem;
+	const OverlaySystem& overlaySystem;
+	SelectableSystem& selectableSystem;
+	const SpriteSystem& spriteSystem;
+	SurvivalSystem& survivalSystem;
+	const TextureSystem& textureSystem;
+	const TransformSystem& transformSystem;
 
 	int foodPerGeneration{ INITIAL_FOOD_COUNT };
-	uint32_t waveCount{ 1 };
-	uint32_t animalCount{ 0 };
-	uint32_t plantCount{ 0 };
+	int waveCount{ 1 };
+	int animalCount{ 0 };
+	int plantCount{ 0 };
 
 	float totalSpeed{ 0.0f };
 	float totalStrength{ 0.0f };

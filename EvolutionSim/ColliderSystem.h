@@ -1,61 +1,65 @@
 #pragma once
-#include <vector>
+#include <set>
 
-class SurvivalSystem;
+class BeingManager;
+
 class GeneSystem;
 class PartitionSystem;
-class BeingManager;
+class SpriteSystem;
+class SurvivalSystem;
+class TextureSystem;
 class TransformSystem;
 class VelocitySystem;
 
-enum class CollisionType
-{
-	ALIVE_ANIMAL_VS_ALIVE_ANIMAL = 1 << 1,
-	ALIVE_ANIMAL_VS_OTHER = 1 << 2,
-	OTHER_VS_ALIVE_ANIMAL = 1 << 3,
-	OTHER = 1 << 4
-};
+const float FOOD_STRENGTH_MULTIPLIER{ 0.00001f };
 
 class ColliderSystem
 {
+	using Handle = unsigned int;
+
 public:
 	ColliderSystem(
-		TransformSystem& tformSys,
+		const GeneSystem& geneSys,
+		PartitionSystem& partSys,
+		SpriteSystem& spriteSys,
 		SurvivalSystem& survSys,
-		GeneSystem& geneSys,
-		const PartitionSystem& partSys,
+		const TextureSystem& textureSys,
+		TransformSystem& tformSys,
 		const VelocitySystem& velSys
 	) :
-		transformSystem(tformSys),
-		survivalSystem(survSys),
 		geneSystem(geneSys),
 		partitionSystem(partSys),
+		spriteSystem(spriteSys),
+		survivalSystem(survSys),
+		textureSystem(textureSys),
+		transformSystem(tformSys),
 		velocitySystem(velSys)
 	{}
 
-	void process(BeingManager& beings, long long dt);
+	void update(BeingManager& beings, unsigned int dt);
+
+	enum class CollisionType
+	{
+		ALIVE_ANIMAL_VS_ALIVE_ANIMAL = 1 << 1,
+		ALIVE_ANIMAL_VS_OTHER = 1 << 2,
+		OTHER_VS_ALIVE_ANIMAL = 1 << 3,
+		OTHER = 1 << 4
+	};
+
+	std::set<Handle>& getToDelete(const BeingManager& beings);
 
 private:
-	TransformSystem& transformSystem;
+	const GeneSystem& geneSystem;
+	PartitionSystem& partitionSystem;
+	SpriteSystem& spriteSystem;
 	SurvivalSystem& survivalSystem;
-	GeneSystem& geneSystem;
-	const PartitionSystem& partitionSystem;
+	const TextureSystem& textureSystem;
+	TransformSystem& transformSystem;
 	const VelocitySystem& velocitySystem;
 
-	const float foodStrengthMultiplier{ 0.00000001f };
+	void detectCollision(Being& beingA, Being& beingB, const Handle handleA, const Handle handleB, const float foodMultiplier);
 
-	void detectCollision(BeingManager& beings, const uint32_t handleA, const uint32_t handleB, int dt);
+	void eatOnCollision(float foodMultiplier, Being& beingA, Being& beingB, const Handle handleB);
 
-	CollisionType detectCollisionType(BeingManager& beings, const uint32_t handleA, const uint32_t handleB);
-
-	//void evaluateStrengthBonus(const GeneComponent& geneA, const GeneComponent& geneB, float& strengthBonusA, float& strengthBonusB)
-	//{
-	//	float strengthA = geneSystem.getTrait(geneA, Trait::STRENGTH);
-	//	float strengthB = geneSystem.getTrait(geneB, Trait::STRENGTH);
-
-	//	float strengthRatioAToB = strengthA / (strengthA + strengthB);
-
-	//	strengthBonusA = strengthRatioAToB;
-	//	strengthBonusB = (1 - strengthRatioAToB);
-	//}
+	std::set<Handle> toDelete{};
 };

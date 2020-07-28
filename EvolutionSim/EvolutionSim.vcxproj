@@ -44,14 +44,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)SolengineV2\;$(SolutionDir)deps\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)EvolutionSim\$(Configuration)\</OutDir>
@@ -84,6 +84,7 @@
       <PrecompiledHeaderFile />
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,6 +110,7 @@
     <ClCompile Include="implot.cpp" />
     <ClCompile Include="implot_demo.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="OverlaySystem.cpp" />
     <ClCompile Include="PartitionSystem.cpp" />
     <ClCompile Include="Sceensize.h" />
     <ClCompile Include="CameraSystem.cpp" />
@@ -116,7 +118,17 @@
     <ClCompile Include="ShapeSystem.cpp" />
     <ClCompile Include="SpriteSystem.cpp" />
     <ClCompile Include="SurvivalSystem.cpp" />
-    <ClCompile Include="SurvivalSystem.h" />
+    <ClInclude Include="ArenaSize.h" />
+    <ClInclude Include="BackgroundImage.h" />
+    <ClInclude Include="Being.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraComponent.h" />
+    <ClInclude Include="OverlaySystem.h" />
+    <ClInclude Include="SelectionBox.h" />
+    <ClInclude Include="ShapeComponent.h" />
+    <ClInclude Include="SurvivalSystem.h" />
+    <ClCompile Include="TextureSystem.cpp" />
+    <ClCompile Include="TransformSystem.cpp" />
     <ClCompile Include="UserInputSystem.cpp" />
     <ClCompile Include="VelocitySystem.cpp" />
   </ItemGroup>
@@ -129,7 +141,6 @@
     <ClInclude Include="GeneComponent.h" />
     <ClInclude Include="GUISystem.h" />
     <ClInclude Include="Math.h" />
-    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="SelectableSystem.h" />
     <ClInclude Include="CameraSystem.h" />
     <ClInclude Include="ColliderSystem.h" />
@@ -138,7 +149,9 @@
     <ClInclude Include="SpriteComponent.h" />
     <ClInclude Include="SpriteSystem.h" />
     <ClInclude Include="GeneSystem.h" />
-    <ClInclude Include="SurivalComponent.h" />
+    <ClInclude Include="SurvivalComponent.h" />
+    <ClInclude Include="TextureComponent.h" />
+    <ClInclude Include="TextureSystem.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="UserInputSystem.h" />
     <ClInclude Include="TransformSystem.h" />

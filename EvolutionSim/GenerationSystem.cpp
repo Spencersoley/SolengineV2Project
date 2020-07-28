@@ -1,81 +1,112 @@
-#include "GenerationSystem.h"
-#include "SurvivalSystem.h"
-#include "SelectableSystem.h"
-#include "BeingManager.h"
-#include "GeneSystem.h"
-#include "DataSystem.h"
-#include "TransformSystem.h"
-
 #include "BeingCreateInfo.h"
 #include "DefaultColours.h"
 #include "Math.h"
+#include "ArenaSize.h"
 
-constexpr uint32_t INITIAL_ANIMAL_COUNT = 5;
-constexpr uint32_t ALLOCATED_BEING_POOL_SIZE = 2000;
+#include "BeingManager.h"
+#include "ColliderSystem.h"
+#include "DataSystem.h"
+#include "GenerationSystem.h"
+#include "GeneSystem.h"
+#include "OverlaySystem.h"
+#include "SelectableSystem.h"
+#include "SurvivalSystem.h"
+#include "TextureSystem.h"
+#include "TransformSystem.h"
+#include "SpriteSystem.h"
+
+constexpr int INITIAL_ANIMAL_COUNT = 5;
+constexpr int ALLOCATED_BEING_POOL_SIZE = 800;
 constexpr float DEFAULT_PLANT_FULLNESS = 300.0f;
 
-using BeingType = GeneComponent::BeingType;
+constexpr float ANIMAL_DIMS = 25.0f;
+constexpr float PLANT_DIMS = 18.0f;
+
+constexpr float NO_FULLNESS = 0.0f;
+constexpr bool ALIVE = true;
+
 using Trait = GeneComponent::Trait;
 using Data = DataSystem::Data;
+using SurvivalState = SurvivalComponent::SurvivalState;
+using Handle = unsigned int;
+using Texture = TextureSystem::Component;
 
 void GenerationSystem::begin(BeingManager& beings)
 {
 	selectableSystem.clearSelectedHandle();
-	waveCount = 0;
-	beings.reset();
-	beings.init(ALLOCATED_BEING_POOL_SIZE);
-	beings.resize(INITIAL_ANIMAL_COUNT + static_cast<uint32_t>(getFoodPerGeneration()));
 	survivalSystem.setWaveOver(false);
+	survivalSystem.setFoodHandlesNeedUpdate(true);
 
-	BeingCreateInfo beingCreateInfo{};
-	beingCreateInfo.dims = glm::vec2(20.0f);
-	beingCreateInfo.survivalState = SurvivalState::SEARCHING;
-	beingCreateInfo.isAlive = true;
-	beingCreateInfo.colour = ANIMAL_COLOUR;
-	beingCreateInfo.genes = GeneComponent(BeingType::ANIMAL, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f);
-	beingCreateInfo.stamina = 0.5f;
-	beingCreateInfo.fullness = 0.0f;
+	waveCount = 0;
+	beings.init(ALLOCATED_BEING_POOL_SIZE);
+	size_t totalSize = INITIAL_ANIMAL_COUNT + static_cast<int>(getFoodPerGeneration());
+	beings.setToSize(totalSize);
 
-	for (; beingCreateInfo.beingHandle < INITIAL_ANIMAL_COUNT; beingCreateInfo.beingHandle++)
+	for (Handle beingHandle = 0; beingHandle < INITIAL_ANIMAL_COUNT; ++beingHandle)
 	{
-		beingCreateInfo.pos = randomPosOutsideRadius(ARENA_SIZE / 2.0f);
-		beings.create(beingCreateInfo);
+		Being& being = beings.pool[beingHandle];
+		survivalSystem.setSurvivalState(being.survival, SurvivalState::SEARCHING);
+		survivalSystem.setIsAlive(being.survival, true);
+		survivalSystem.setFullness(being.survival, 0.0f);
+		survivalSystem.setStamina(being.survival, 0.5f);
+		spriteSystem.setColour(being.sprite, ANIMAL_COLOUR);
+		spriteSystem.setTextureID(being.sprite, textureSystem.getTextureID(Texture::BEING_1));
+		geneSystem.setBeingType(being.gene, BeingType::ANIMAL);
+		geneSystem.setTrait(being.gene, Trait::SPEED, 0.5f);
+		geneSystem.setTrait(being.gene, Trait::STAMINA, 0.5f);
+		geneSystem.setTrait(being.gene, Trait::STRENGTH, 0.5f);
+		geneSystem.setTrait(being.gene, Trait::DIET, 0.5f);
+		geneSystem.setTrait(being.gene, Trait::HUNGER, 0.5f);
+		transformSystem.setPos(being.transform, randomPosOutsideRadius(ARENA_SIZE / 2.0f));
+		transformSystem.setDims(being.transform, glm::vec2(ANIMAL_DIMS));
 	}
 
-	beingCreateInfo.dims = glm::vec2(10.0f);
-	beingCreateInfo.survivalState = SurvivalState::AWAITING;
-	beingCreateInfo.colour = PLANT_COLOUR;
-	beingCreateInfo.isAlive = false;
-	beingCreateInfo.genes = GeneComponent(BeingType::PLANT, 0.0f, 0.5f, 0.5f, 0.5f, 0.5f);
-	beingCreateInfo.stamina = 0.0f;
-	beingCreateInfo.fullness = DEFAULT_PLANT_FULLNESS;
-
-	for (; beingCreateInfo.beingHandle < INITIAL_ANIMAL_COUNT + getFoodPerGeneration(); beingCreateInfo.beingHandle++)
+	for (Handle beingHandle = INITIAL_ANIMAL_COUNT; beingHandle < totalSize; ++beingHandle)
 	{
-		beingCreateInfo.pos = randomPosWithinRadius(ARENA_SIZE / 2.0f);
-		beings.create(beingCreateInfo);
-	}
+		Being& being = beings.pool[beingHandle];
+		survivalSystem.setSurvivalState(being.survival, SurvivalState::AWAITING);
+		survivalSystem.setIsAlive(being.survival, false);
+		survivalSystem.setFullness(being.survival, DEFAULT_PLANT_FULLNESS);
+		survivalSystem.setStamina(being.survival, 0.0f);
+		spriteSystem.setColour(being.sprite, PLANT_COLOUR);
+		spriteSystem.setTextureID(being.sprite, textureSystem.getTextureID(Texture::PLANT));
+		geneSystem.setBeingType(being.gene, BeingType::PLANT);
+		geneSystem.setTrait(being.gene, Trait::SPEED, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::STAMINA, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::STRENGTH, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::DIET, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::HUNGER, 0.0f);
+		transformSystem.setPos(being.transform, randomPosWithinRadius(ARENA_SIZE / 2.0f));
+		transformSystem.setDims(being.transform, glm::vec2(PLANT_DIMS));
+	};
 
 	animalCount = INITIAL_ANIMAL_COUNT;
 	plantCount = foodPerGeneration;
 }
 
-void GenerationSystem::process(BeingManager& beings)
+void GenerationSystem::update(BeingManager& beings)
 {
-	if (std::vector<uint32_t> toDelete = survivalSystem.compileToDelete(beings); toDelete.size())
-	{
-		uint32_t& selected = selectableSystem.getSelectedHandle();
-		const auto deleteBeing = [&beings, &selected](const uint32_t& handle) 
-		{ 
-			beings.deleteBeing(handle, selected); 
-		};
-
-		std::for_each(crbegin(toDelete), crend(toDelete), deleteBeing);
-	}
-
+	std::set<Handle>& toDelete = colliderSystem.getToDelete(beings);
 	if (survivalSystem.getWaveOver())
 	{
 		newWave(beings);
+		toDelete.clear();
+		return;
+	}
+
+	if (!toDelete.empty())
+	{
+		Handle& selected = selectableSystem.getSelectedHandle();
+		const auto deleteBeing = [&beings, &selected](const Handle& handle)
+		{
+			beings.deleteBeing(handle, selected);
+		};
+
+		std::for_each(crbegin(toDelete), crend(toDelete), deleteBeing);
+
+		survivalSystem.setFoodHandlesNeedUpdate(true);
+
+		toDelete.clear();
 	}
 }
 
@@ -89,69 +120,40 @@ void GenerationSystem::newWave(BeingManager& beings)
 	totalStamina = 0.0f;
 	totalActiveBeings = 0;
 
-	BeingCreateInfo beingCreateInfo{};
-	beingCreateInfo.beingHandle = 0;
+	selectableSystem.clearSelectedHandle();
 
-	const auto replication = [this, &beingCreateInfo, &beings](const DuplicationData& data)
+	const size_t oldSize = beings.pool.size();
+	for (Handle beingHandle = 0; beingHandle < oldSize; ++beingHandle)
 	{
-		beingCreateInfo.pos = data.pos;
-		beingCreateInfo.isAlive = data.isAlive;
-		beingCreateInfo.genes = data.genes;
-
-		if (this->geneSystem.getBeingType(data.genes) == BeingType::ANIMAL)
+		Being& being = beings.pool[beingHandle];
+		if (survivalSystem.getIsAlive(being.survival))
 		{
-			beingCreateInfo.dims = glm::vec2(20.0f);
+			geneSystem.mutate(being.gene);
+			survivalSystem.setSurvivalState(being.survival, SurvivalState::SEARCHING);
+			survivalSystem.setFullness(being.survival, 0.0f);
+			survivalSystem.setStamina(being.survival, geneSystem.getTrait(being.gene, Trait::STAMINA));
+			spriteSystem.setTextureID(being.sprite, textureSystem.getTextureID(Texture::BEING_1));
+			beings.pool.push_back(being);
 
-			if (data.isAlive)
-			{
-				beingCreateInfo.fullness = 0.0f;
-				beingCreateInfo.colour = ANIMAL_COLOUR;
-				beingCreateInfo.survivalState = SurvivalState::SEARCHING;
-				beingCreateInfo.stamina = geneSystem.getTrait(data.genes, Trait::STAMINA);
-				beings.create(beingCreateInfo);
-
-				this->totalSpeed += this->geneSystem.getTrait(data.genes, Trait::SPEED);
-				this->totalStrength += this->geneSystem.getTrait(data.genes, Trait::STRENGTH);
-				this->totalDiet += this->geneSystem.getTrait(data.genes, Trait::DIET);
-				this->totalStamina += this->geneSystem.getTrait(data.genes, Trait::STAMINA);
-				this->totalActiveBeings++;
-				this->animalCount++;
-			}
-			else
-			{
-				beingCreateInfo.colour = DEAD_ANIMAL_COLOUR;
-				beingCreateInfo.survivalState = SurvivalState::AWAITING;
-				beingCreateInfo.fullness = data.currentFullness;
-				beingCreateInfo.stamina = 0.0f;
-				beings.create(beingCreateInfo);
-			}
+			this->totalDiet += 2 * geneSystem.getTrait(being.gene, Trait::DIET);
+			this->totalSpeed += 2 * geneSystem.getTrait(being.gene, Trait::SPEED);
+			this->totalStamina += 2 * geneSystem.getTrait(being.gene, Trait::STAMINA);
+			this->totalStrength += 2 * geneSystem.getTrait(being.gene, Trait::STRENGTH);
+			this->totalActiveBeings += 2;
+			animalCount += 2;
+		}
+		else if (geneSystem.getBeingType(being.gene) == BeingType::ANIMAL)
+		{
+			//animal
+			//dead animal count++
 		}
 		else
 		{
-			beingCreateInfo.dims = glm::vec2(10.0f);
-			beingCreateInfo.colour = PLANT_COLOUR;
-			beingCreateInfo.survivalState = SurvivalState::AWAITING;
-			beingCreateInfo.isAlive = false;
-			beingCreateInfo.fullness = DEFAULT_PLANT_FULLNESS;
-			beingCreateInfo.stamina = 0.0f;
-			beings.create(beingCreateInfo);
-
-			this->plantCount++;
+			//plant
+			survivalSystem.setFullness(being.survival, DEFAULT_PLANT_FULLNESS);
+			plantCount++;
 		}
-
-		beingCreateInfo.beingHandle++;
-	};
-
-	selectableSystem.clearSelectedHandle();
-
-	std::vector<DuplicationData> replicatedGenes;
-	survivalSystem.replicate(beings, replicatedGenes);
-
-	uint32_t replicatedBeingsSize = replicatedGenes.size();
-	uint32_t totalBeingsSize = replicatedBeingsSize + getFoodPerGeneration();
-	beings.resize(totalBeingsSize);
-
-	std::for_each(cbegin(replicatedGenes), cend(replicatedGenes), replication);
+	}
 
 	if (animalCount == 0)
 	{
@@ -159,24 +161,32 @@ void GenerationSystem::newWave(BeingManager& beings)
 		return;
 	}
 
-	beingCreateInfo.dims = glm::vec2(10.0f);
-	beingCreateInfo.survivalState = SurvivalState::AWAITING;
-	beingCreateInfo.colour = PLANT_COLOUR;
-	beingCreateInfo.isAlive = false;
-	beingCreateInfo.genes = GeneComponent(BeingType::PLANT, 0.0f, 0.5f, 0.5f, 0.5f, 0.5f);
-	beingCreateInfo.stamina = 0.0f;
-	beingCreateInfo.fullness = DEFAULT_PLANT_FULLNESS;
-
-	while (beingCreateInfo.beingHandle < totalBeingsSize)
+	size_t animalSize = beings.pool.size();
+	size_t totalBeingsSize = animalSize + getFoodPerGeneration();
+	beings.resize(totalBeingsSize);
+	plantCount += getFoodPerGeneration();
+	unsigned int target = getFoodPerGeneration();
+	for (unsigned int i = 0; i < target; ++i)
 	{
-		beingCreateInfo.pos = randomPosWithinRadius(ARENA_SIZE / 2.0f);
-		beings.create(beingCreateInfo);
-		beingCreateInfo.beingHandle++;
-		plantCount++;
+		Being& being = beings.pool[animalSize + i];
+		survivalSystem.setSurvivalState(being.survival, SurvivalState::AWAITING);
+		survivalSystem.setIsAlive(being.survival, false);
+		survivalSystem.setFullness(being.survival, DEFAULT_PLANT_FULLNESS);
+		survivalSystem.setStamina(being.survival, 0.0f);
+		spriteSystem.setColour(being.sprite, PLANT_COLOUR);
+		spriteSystem.setTextureID(being.sprite, textureSystem.getTextureID(Texture::PLANT));
+		geneSystem.setBeingType(being.gene, BeingType::PLANT);
+		geneSystem.setTrait(being.gene, Trait::SPEED, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::STAMINA, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::STRENGTH, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::DIET, 0.0f);
+		geneSystem.setTrait(being.gene, Trait::HUNGER, 0.0f);
+		transformSystem.setPos(being.transform, randomPosWithinRadius(ARENA_SIZE / 2.0f));
+		transformSystem.setDims(being.transform, glm::vec2(PLANT_DIMS));
 	}
 
 	// data update
-	if (uint32_t n = plantCount + animalCount; n > dataSystem.getData(Data::BEING_MAXIMUM).back())
+	if (unsigned int n = plantCount + animalCount; n > dataSystem.getData(Data::BEING_MAXIMUM).back())
 	{
 		dataSystem.clear(Data::BEING_MAXIMUM);
 		dataSystem.addPoint(Data::BEING_MAXIMUM, static_cast<float>(n));
@@ -188,6 +198,9 @@ void GenerationSystem::newWave(BeingManager& beings)
 	dataSystem.addPoint(Data::STAMINA, totalStamina / totalActiveBeings);
 	dataSystem.addPoint(Data::ANIMAL_POPULATION, static_cast<float>(totalActiveBeings));
 	dataSystem.addPoint(Data::PLANT_POPULATION, static_cast<float>(plantCount));
+
+	overlaySystem.updateOverlay(beings);
+	survivalSystem.setFoodHandlesNeedUpdate(true);
 
 	waveCount++;
 }

@@ -1,16 +1,18 @@
+#include "BeingManager.h"
+#include "SelectionBox.h"
 #include "SelectableSystem.h"
 #include "TransformSystem.h"
-#include "BeingManager.h"
 
 void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& beings)
 {
-	float selectionProximity = std::numeric_limits<float>::max();
-	bool anySelection{ false };
-	for (uint32_t beingHandle = 0; beingHandle < beings.getSize(); beingHandle++)
+	float selectionProximity = FLT_MAX;
+	Handle tempSelected{ UINT_MAX };
+
+	size_t beingsSize = beings.pool.size();
+	for (Handle beingHandle = 0; beingHandle < beingsSize; ++beingHandle)
 	{
-		const TransformComponent& transform = beings.getTransformComponent(beingHandle);
-		const glm::vec2& beingPos = transformSystem.getPos(transform);
-		const glm::vec2& beingDims = transformSystem.getDims(transform);
+		const glm::vec2& beingPos = transformSystem.getPos(beings.pool[beingHandle].transform);
+		const glm::vec2& beingDims = transformSystem.getDims(beings.pool[beingHandle].transform);
 		const float xRadius = beingDims.x / 2.0f;
 		const float yRadius = beingDims.y / 2.0f;
 
@@ -25,26 +27,22 @@ void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& 
 			if (dist < selectionProximity)
 			{
 				selectionProximity = dist;
-				selectedHandle = beingHandle;
-				anySelection = true;
+				tempSelected = beingHandle;
 			}
 		}
 	}
-
-	if (!anySelection)
-	{
-		clearSelectedHandle();
-	}
+	
+	selectedHandle = tempSelected;
 }
 
-void SelectableSystem::process(const BeingManager& beings) const
+void SelectableSystem::update(const BeingManager& beings, SelectionBox& selectionBox) const
 {
 	if (selectedHandle < beings.getSize()) // is valid handle
 	{
-		transformSystem.setSelectionBoxPos(transformSystem.getPos(beings.getTransformComponent(selectedHandle)));
+		transformSystem.setPos(selectionBox.transform, transformSystem.getPos(beings.pool[selectedHandle].transform));
 	}
 	else //invalid handle
 	{
-		transformSystem.setSelectionBoxPos(glm::vec2(FLT_MAX));
+		transformSystem.setPos(selectionBox.transform, glm::vec2(FLT_MAX));
 	}
 }

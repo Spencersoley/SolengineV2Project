@@ -118,7 +118,7 @@ namespace SolengineV2
 		void createRenderBatches()
 		{
 			// This will store all the vertices that we need to upload
-			std::vector <Vertex> vertices;
+			std::vector<Vertex> vertices;
 			// Resize the buffer to the exact size we need so we can treat
 			// it like an array
 			vertices.resize(glyphPointers.size() * 6);
@@ -169,7 +169,6 @@ namespace SolengineV2
 			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 			// Upload the data
 			glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data());
-
 			// Unbind the VBO
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}

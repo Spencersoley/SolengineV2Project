@@ -1,12 +1,14 @@
 #pragma once
-#include <vector>
-#include <InputManager.h>
+#include <glm\ext\vector_float2.hpp>
 
 class BeingManager;
+struct SelectionBox;
 class TransformSystem;
 
 class SelectableSystem
 {
+	using Handle = unsigned int;
+
 public:
 	SelectableSystem(
 		TransformSystem& tformSys
@@ -14,17 +16,18 @@ public:
 		transformSystem(tformSys)
 	{}
 
-	uint32_t& getSelectedHandle() { return selectedHandle; }
-	uint32_t getCSelectedHandle() const { return selectedHandle; }
+	// fix this with underlying cast in  overloaded function
+	Handle& getSelectedHandle() { return selectedHandle; }
+	Handle  getCSelectedHandle() const { return selectedHandle; }
 
 	void processClick(const glm::vec2& mouseCoords, BeingManager& beings);
 
-	void process(const BeingManager& beings) const;
+	void update(const BeingManager& beings, SelectionBox& selectionBox) const;
 
 	void clearSelectedHandle() { selectedHandle = UINT_MAX; }
 
 private:
 	TransformSystem& transformSystem;
 
-	uint32_t selectedHandle{ UINT_MAX };
+	Handle selectedHandle{ UINT_MAX };
 };

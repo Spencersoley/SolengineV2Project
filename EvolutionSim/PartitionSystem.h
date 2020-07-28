@@ -1,35 +1,36 @@
 #pragma once
-#include <map>
 #include <vector>
 
-#include "TransformSystem.h"
+#include "ArenaSize.h"
 
-constexpr uint32_t CELL_SIZE{ 40 };
+constexpr size_t CELL_SIZE{ 40 };
 constexpr float GRID_SIZE{ ARENA_SIZE + (2 * CELL_SIZE) };
 //makeshift constexpr ceil function- c++17 no longer needs one linr constexpr function
-constexpr uint32_t CELL_COUNTER() noexcept
+constexpr size_t CELL_COUNTER() noexcept
 {
 	float cell = GRID_SIZE / CELL_SIZE;
-	if (cell == static_cast<float>(static_cast<uint32_t>(cell)))
+	if (cell == static_cast<float>(static_cast<unsigned int>(cell)))
 	{
-		return static_cast<uint32_t>(cell);
+		return static_cast<unsigned int>(cell);
 	}
 	else
 	{
-		return static_cast<uint32_t>(cell + 1);
+		return static_cast<unsigned int>(cell + 1);
 	}
 }
 
-constexpr uint32_t CELL_COUNT = CELL_COUNTER();
-
-using Cell = std::vector<uint32_t>;
-using Row = std::vector<Cell>;
-using Grid = std::vector<Row>;
+constexpr size_t CELL_COUNT = CELL_COUNTER();
 
 class BeingManager;
+class TransformSystem;
 
 class PartitionSystem
 {
+	using Handle = unsigned int;
+	using Cell = std::vector<Handle>;
+	using Row = std::vector<Cell>;
+	using Grid = std::vector<Row>;
+
 public:
 	PartitionSystem(
 		const TransformSystem& tformSys
@@ -37,14 +38,10 @@ public:
 		transformSystem(tformSys)
 	{}
 
-	Grid processBeingGrid(const BeingManager& beings) const;
-
-	std::vector<uint32_t> processFoodHandles(const BeingManager& beings) const;
+	const Grid& partitionBeingsToGrid(const BeingManager& beings);
 
 private:
 	const TransformSystem& transformSystem;
 
-	Grid beingGrid = Grid(CELL_COUNT, Row(CELL_COUNT, Cell{}));
-
-	std::vector<uint32_t> foodHandles{};
+	Grid grid = Grid(CELL_COUNT, Row(CELL_COUNT, Cell{}));
 };

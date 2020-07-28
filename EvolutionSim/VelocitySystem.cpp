@@ -1,20 +1,28 @@
-#include "VelocitySystem.h"
 #include "BeingManager.h"
 #include "TransformSystem.h"
+#include "VelocitySystem.h"
 
-constexpr float VELOCITY_MODIFIER = 0.000000005f;
+constexpr float VELOCITY_MODIFIER = 0.000005f;
 
-void VelocitySystem::process(BeingManager& beings, long long dt) const
+void VelocitySystem::update(BeingManager& beings, unsigned int dt) const
 {
 	//likely a conversion warning: it's not an issue?
-	dt *= physicsSpeed;
+	float adjustedDT = static_cast<int>(physicsSpeed) * dt * VELOCITY_MODIFIER;
 
-	for (uint32_t beingHandle = 0; beingHandle < beings.getSize(); beingHandle++)
+	const auto updatePosition = [&beings, adjustedDT, this](Being& being)
 	{
-		const VelocityComponent& component = beings.getVelocityComponent(beingHandle);
-		if (component.velocity != 0)
-		{
-			transformSystem.translate(beings.getTransformComponent(beingHandle), (component.velocity * dt * VELOCITY_MODIFIER) * component.direction);
-		}
-	}
-};
+		transformSystem.translate(being.transform, (being.velocity.velocity * adjustedDT) * being.velocity.direction);
+	};
+
+	std::for_each(begin(beings.pool), end(beings.pool), updatePosition);
+}
+
+void VelocitySystem::setVelocity(VelocityComponent& component, const float set) const
+{ 
+	component.velocity = set; 
+}
+
+void VelocitySystem::setDirection(VelocityComponent& component, const glm::vec2& set) const
+{
+	component.direction = set;
+}

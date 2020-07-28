@@ -22,6 +22,11 @@ namespace SolengineV2
 		unsigned int VBO, VAO, EBO;
 	};
 
+	struct Circle
+	{
+
+	};
+
 	class GeometryRenderer
 	{
 	public:
@@ -50,6 +55,19 @@ namespace SolengineV2
 
 			glBindVertexArray(square.VAO); 
 			glDrawElements(GL_LINE_LOOP, square.indices.size(), GL_UNSIGNED_INT, 0);
+		}
+				
+		void draw(const glm::vec2& pos, const glm::vec2& dims, unsigned int numberOfSegments) const
+		{
+			glBegin(GL_LINE_LOOP);
+			for (unsigned int ii = 0; ii < numberOfSegments; ii++) 
+			{
+				float theta = 2.0f * 3.1415926f * float(ii) / float(numberOfSegments);//get the current angle 
+				float x = dims.x * cosf(theta);//calculate the x component 
+				float y = dims.y * sinf(theta);//calculate the y component 
+				glVertex2f(x + pos.x, y + pos.y);//output vertex 
+			}
+			glEnd();
 		}
 	};
 }

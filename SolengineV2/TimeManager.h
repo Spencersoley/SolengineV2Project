@@ -5,47 +5,52 @@
 #include <GL/glew.h>
 #include <algorithm>
 
-#define SAMPLES 10
+constexpr uint32_t SAMPLES = 10;
 
 namespace SolengineV2
 {
+	enum class TimerMode { NONE, SAMPLE_AVERAGE, LIFETIME_AVERAGE };
+
 	class TimeManager
 	{
 	private:
 		std::chrono::milliseconds desiredTicksPerFrame{};
-		bool trackFPS;
 		std::chrono::steady_clock::time_point endTime{};
 		std::chrono::steady_clock::time_point startTime{};
 		std::chrono::steady_clock::time_point previousStartTime{};
 
-		long long nanosPerFrame[SAMPLES]{};
-		long long frameCount = 0;
+		uint32_t microsPerFrame[SAMPLES]{};
+		uint32_t frameCount{ 0 };
+		TimerMode mode;
+
 
 	public:
-		TimeManager(unsigned int maxFPS, bool track)
-			:
-			trackFPS(track)
+		TimeManager(uint32_t maxFPS, TimerMode timerMode) : mode(timerMode)
 		{
 			desiredTicksPerFrame = std::chrono::milliseconds(1000 / maxFPS);
 			previousStartTime = std::chrono::high_resolution_clock::now();
 			endTime = std::chrono::high_resolution_clock::now();
+
 		}
 
-		void limitFPS(bool track)
+		void limitFPS()
 		{
 			std::chrono::steady_clock::time_point endTime = now();
-			long long frameNano = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
-			std::chrono::milliseconds frameTicks = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(frameNano));
+			uint32_t frameNaframeMicro = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count());
+			std::chrono::milliseconds frameTicks = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds(frameNaframeMicro));
 			//Prevents frame finishing earlier and FPS breaking max fps
 			if (desiredTicksPerFrame > frameTicks)
 			{
-				SDL_Delay(std::chrono::duration_cast<std::chrono::milliseconds>(desiredTicksPerFrame - frameTicks).count());
+				SDL_Delay(static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(desiredTicksPerFrame - frameTicks).count()));
 			}
 
-			if (track)
+			if (mode == TimerMode::SAMPLE_AVERAGE)
 			{
-				//includes delay
-				reportFPS(std::chrono::duration_cast<std::chrono::nanoseconds>(now() - startTime).count());
+				reportFPS(static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::microseconds>(now() - startTime).count()));
+			}
+			else if (mode == TimerMode::LIFETIME_AVERAGE)
+			{
+				collateFPS(static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now() - startTime).count()));
 			}
 		}
 
@@ -54,40 +59,66 @@ namespace SolengineV2
 			return std::chrono::high_resolution_clock::now();
 		}
 
-		//returns change in time in nanoseconds
-		long long getDeltaTime()
+		//returns change in time in microseconds
+		uint32_t getDeltaTime()
 		{
 			startTime = now();
-			long long nanoSeconds = std::chrono::duration_cast<std::chrono::nanoseconds>(startTime - previousStartTime).count();
+			uint32_t microseconds = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::microseconds>(startTime - previousStartTime).count());
 			previousStartTime = startTime;
-			return nanoSeconds;
+			return microseconds;
 		}
 
 	private:
-
-		//Announces FPS every NUM_SAMPLES frames
-		void reportFPS(long long frameNS)
+		void collateFPS(uint32_t frameMicros)
 		{
-			nanosPerFrame[frameCount % SAMPLES] = frameNS;
+			microsPerFrame[frameCount % SAMPLES] = frameMicros;
 			frameCount++;
 
-			//Announces fps every 10 cycles
-			if (frameCount % 10 == 0)
+			if (frameCount % SAMPLES == 0)
 			{
 				//Calculates new average frame time
-				uint32_t frames = std::min(frameCount, (long long)SAMPLES);
-				long long nanosPerFrameTotal = 0;
+				uint32_t frames = std::min(frameCount, SAMPLES);
+				uint32_t microsPerFrameTotal = 0;
 				for (uint32_t i = 0; i < frames; i++)
 				{
-					nanosPerFrameTotal += nanosPerFrame[i];
+					microsPerFrameTotal += microsPerFrame[i];
 				}
-				double nanosPerFrameAverage = nanosPerFrameTotal / frames;
-				double FPSTracked = 0.0f;
+
+				float nanosPerFrameAverage = static_cast<float>(microsPerFrameTotal) / frames;
+				float FPS = 0.0f;
 				if (nanosPerFrameAverage > 0.0f)
 				{
-					FPSTracked = 1000000000 / nanosPerFrameAverage;
+					FPS = 1000000000 / nanosPerFrameAverage;
 				}
-				std::cout << FPSTracked << '\n';
+				static long long fpsTotal{ 0 };
+				fpsTotal += static_cast<long long>(FPS);
+				std::cout << "Lifetime average: " << (fpsTotal * SAMPLES) / frameCount << '\n';
+			}
+		}
+
+		//Announces FPS every NUM_SAMPLES frames
+		void reportFPS(uint32_t frameMicros)
+		{
+			microsPerFrame[frameCount % SAMPLES] = frameMicros;
+			frameCount++;
+
+			//Announces fps every n cycles
+			if (frameCount % SAMPLES == 0)
+			{
+				//Calculates new average frame time
+				uint32_t frames = std::min(frameCount, SAMPLES);
+				uint32_t nanosPerFrameTotal = 0;
+				for (uint32_t i = 0; i < frames; i++)
+				{
+					nanosPerFrameTotal += microsPerFrame[i];
+				}
+				float nanosPerFrameAverage = static_cast<float>(nanosPerFrameTotal) / frames;
+				float FPSTracked = 0.0f;
+				if (nanosPerFrameAverage > 0.0f)
+				{
+					FPSTracked = 1000000 / nanosPerFrameAverage;
+				}
+				std::cout << "Sample average: " << FPSTracked << '\n';
 			}
 		}
 	};

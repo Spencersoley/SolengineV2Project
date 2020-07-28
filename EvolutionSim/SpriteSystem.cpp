@@ -6,46 +6,68 @@
 #include "CameraSystem.h"
 #include "BeingManager.h"
 
+#include "SpriteComponent.h"
+
+#include "Camera.h"
+#include "BackgroundImage.h"
+
 using Colour = SolengineV2::Colour;
 
 SpriteSystem::SpriteSystem(
 	const SolengineV2::ShaderManager& shaderManager,
 	const SolengineV2::ShaderProgram& defaultShader,
-	CameraSystem& camSys,
-	const TransformSystem& tformSys,
-	const uint32_t backgroundTextureID
+	const CameraSystem& camSys,
+	const TransformSystem& tformSys
 ) :
 	shaderManager(shaderManager),
 	shaderProgram(defaultShader),
 	cameraSystem(camSys),
 	transformSystem(tformSys)
-{
-	components.background.textureID = backgroundTextureID;
-}
+{}
 
-void SpriteSystem::process(BeingManager& beings)
+void SpriteSystem::update(BeingManager& beings, BackgroundImage& background, Camera& camera)
 {
-	cameraSystem.updateCameraMatrices();
+	cameraSystem.updateCameraMatrices(camera.cam, camera.transform);
 	shaderManager.use(shaderProgram, "mySampler"); //mySampler is name of texture sampler variable in shader
-	shaderManager.setProjectionMatrix(shaderProgram, cameraSystem.getProjectionMatrix());
+	shaderManager.setProjectionMatrix(shaderProgram, cameraSystem.getProjectionMatrix(camera.cam));
 	spriteBatch.Begin();
-	renderEntities(spriteBatch, beings);
+	renderEntities(spriteBatch, beings, background);
 	spriteBatch.End();
 	spriteBatch.RenderSpriteBatch();
 	shaderManager.unuse(shaderProgram);
 }
 
-void SpriteSystem::renderEntities(SolengineV2::SpriteBatch& batch, const BeingManager& beings) const
+SolengineV2::Colour SpriteSystem::getColour(const SpriteComponent& component) const
 {
-	render(batch, transformSystem.getBackgroundPos(), transformSystem.getBackgroundDims(), getTextureID(components.background), getColour(components.background));
+	return component.colour;
+}
 
-	// beings
-	for (uint32_t beingHandle = 0; beingHandle < beings.getSize(); beingHandle++)
+void SpriteSystem::setColour(SpriteComponent& component, const Colour& col) const
+{
+	component.colour = col;
+}
+
+void SpriteSystem::setTextureID(SpriteComponent& component, const GLuint id) const
+{
+	component.textureID = id;
+}
+
+unsigned int SpriteSystem::getTextureID(const SpriteComponent& component) const
+{
+	return component.textureID;
+}
+void SpriteSystem::renderEntities(SolengineV2::SpriteBatch& batch, const BeingManager& beings, const BackgroundImage& background) const
+{
+	render(batch, transformSystem.getPos(background.transform), transformSystem.getDims(background.transform), getTextureID(background.sprite), getColour(background.sprite));
+
+	const auto renderBeing = [&batch, this](const Being& being)
 	{
-		const TransformComponent& transform = beings.getTransformComponent(beingHandle);
-		const SpriteComponent& sprite = beings.getSpriteComponent(beingHandle);
+		const TransformComponent& transform = being.transform;
+		const SpriteComponent& sprite = being.sprite;
 		render(batch, transformSystem.getPos(transform), transformSystem.getDims(transform), getTextureID(sprite), getColour(sprite));
-	}
+	};
+
+	std::for_each(cbegin(beings.pool), cend(beings.pool), renderBeing);
 }
 
 //could we just move this into the engine?
@@ -61,30 +83,3 @@ void SpriteSystem::render(SolengineV2::SpriteBatch& batch, const glm::vec2& pos,
 
 	batch.Draw(destRect, glm::vec4{ (0.0f, 0.0f, 1.0f, 1.0f) }, textureID, 0.0f, col);
 }
-
-//frustum culling
-//bool isInView(TransformComponent* obj, TransformComponent* cam, int sw, int sh, float scale) const
-//{
-//	glm::vec3 pos = transformSystem->getPos(obj);
-//	glm::vec3 dims = transformSystem->getDims(obj);
-
-//	glm::vec2 scaledScreenDims = glm::vec2(sw, sh) / scale;
-
-//	const float MIN_DISTANCE_X = dims.x / 2.0f + scaledScreenDims.x / 2.0f;
-//	const float MIN_DISTANCE_Y = dims.y / 2.0f + scaledScreenDims.y / 2.0f;
-
-//	//Get a vector of the distance between the colliding tile and the agent
-//	glm::vec2 centrePos = glm::vec2(pos.x, pos.y);
-//	glm::vec2 distVec = centrePos - glm::vec2(pos.x, pos.y);
-
-//	float xDepth = MIN_DISTANCE_X - abs(distVec.x);
-//	float yDepth = MIN_DISTANCE_Y - abs(distVec.y);
-
-//	// If the minimum collision distance is greater than the current distance, we have a collision
-//	if (xDepth > 0 && yDepth > 0)
-//	{
-//		return true;
-//	}
-
-//	return false;
-//}

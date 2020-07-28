@@ -3,18 +3,12 @@
 
 class TransformComponent
 {
-public:
-	TransformComponent() {};
-	TransformComponent(
-		const glm::vec2& pos,
-		const glm::vec2& dims
-	) :
-		pos(pos),
-		dims(dims)
-	{}
-
-private:
 	friend class TransformSystem;
+	friend struct Being;
+	friend struct Camera;
+	friend struct BackgroundImage;
+	friend struct SelectionBox;
+
 	glm::vec2 pos{ 0.0f };
 	glm::vec2 dims{ 0.0f };
 };

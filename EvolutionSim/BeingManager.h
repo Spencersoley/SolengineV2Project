@@ -1,50 +1,52 @@
 #pragma once
+#include <vector>
 
-#include "TransformComponent.h"
-#include "VelocityComponent.h"
-#include "SpriteComponent.h"
-#include "GeneComponent.h"
-#include "VelocityComponent.h"
-#include "SurivalComponent.h"
-#include "MemoryPool.h"
-#include "BeingCreateInfo.h"
+#include "Vertex.h"
+#include "Being.h"
 
-using Colour = SolengineV2::Colour;
+class GeneSystem;
+class SpriteSystem;
+class VelocitySystem;
+class SurvivalSystem;
+class TransformSystem;
+
+struct BeingCreateInfo;
+struct Being;
 
 class BeingManager
 {
+	using Colour = SolengineV2::Colour;
+	using Handle = unsigned int;
+
 public:
-	BeingManager(const uint32_t texture) : textureID(texture) {}
+	BeingManager(
+		const GeneSystem& geneSys,
+		const SpriteSystem& spriteSys,
+		const VelocitySystem& velSys,
+		const SurvivalSystem& survSys,
+		const TransformSystem& tformSys
+	) :
+		geneSystem(geneSys),
+		spriteSystem(spriteSys),
+		velocitySystem(velSys),
+		survivalSystem(survSys),
+		transformSystem(tformSys)
+	{}
 
-	uint32_t textureID{ 0 };
-
-	uint32_t getSize() const;
-	void init(const uint32_t size);
-	void create(const BeingCreateInfo& createInfo);
-	void deleteBeing(const uint32_t& handle, uint32_t& selectedHandle);
-	void resize(const uint32_t start);
+	size_t getSize() const;
+	void init(const size_t size);
+	void deleteBeing(const Handle handle, Handle& selectedHandle);
+	void resize(const Handle start);
+	void setToSize(const size_t size);
 	void clear();
 	void reset();
 
-	const TransformComponent&  getTransformComponent  (const uint32_t handle) const { return pools.transform.data[handle];  }
-	const SurvivalComponent&   getSurvivalComponent   (const uint32_t handle) const { return pools.survival.data[handle];   }
-	const VelocityComponent&   getVelocityComponent   (const uint32_t handle) const { return pools.velocity.data[handle];   }
-	const GeneComponent&       getGeneComponent       (const uint32_t handle) const { return pools.gene.data[handle];       }
-	const SpriteComponent&     getSpriteComponent     (const uint32_t handle) const { return pools.sprite.data[handle];     }
-
-	TransformComponent&        getTransformComponent  (const uint32_t handle) { return const_cast<TransformComponent&>(std::as_const(*this).getTransformComponent(handle)); }
-	SurvivalComponent&         getSurvivalComponent   (const uint32_t handle) { return const_cast<SurvivalComponent&> (std::as_const(*this).getSurvivalComponent(handle));  }
-	VelocityComponent&         getVelocityComponent   (const uint32_t handle) { return const_cast<VelocityComponent&> (std::as_const(*this).getVelocityComponent(handle));  }
-	GeneComponent&             getGeneComponent       (const uint32_t handle) { return const_cast<GeneComponent&>     (std::as_const(*this).getGeneComponent(handle));      }
-	SpriteComponent&           getSpriteComponent     (const uint32_t handle) { return const_cast<SpriteComponent&>   (std::as_const(*this).getSpriteComponent(handle));    }
+	std::vector<Being> pool{};
 
 private:
-	struct
-	{
-		MemoryPool<TransformComponent>  transform;
-		MemoryPool<SpriteComponent>     sprite;
-		MemoryPool<VelocityComponent>   velocity;
-		MemoryPool<SurvivalComponent>   survival;
-		MemoryPool<GeneComponent>       gene;
-	} pools;
+	const GeneSystem& geneSystem;
+	const SpriteSystem& spriteSystem;
+	const VelocitySystem& velocitySystem;
+	const SurvivalSystem& survivalSystem;
+	const TransformSystem& transformSystem;
 };

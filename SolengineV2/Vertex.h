@@ -15,8 +15,8 @@ namespace SolengineV2
 
     struct Colour
     {
-        Colour() : r(0), g(0), b(0), a(0) { }
-        Colour(GLubyte R, GLubyte G, GLubyte B, GLubyte A) : r(R), g(G), b(B), a(A) { }
+        constexpr Colour() : r(0), g(0), b(0), a(0) { }
+        constexpr Colour(GLubyte R, GLubyte G, GLubyte B, GLubyte A) : r(R), g(G), b(B), a(A) { }
         GLubyte r, g, b, a;
     };
 

@@ -5,10 +5,11 @@ namespace SolengineV2
 	class InputManager;
 	enum class GameState;
 }
+class BeingManager;
+struct Camera;
 class TransformSystem;
 class CameraSystem;
 class SelectableSystem;
-class BeingManager;
 
 class UserInputSystem
 {
@@ -25,7 +26,7 @@ public:
 		selectableSystem(selSys)
 	{}
 
-	void process(const long long dt, BeingManager& beingManager, SolengineV2::GameState& gameState);
+	void update(const unsigned int dt, BeingManager& beingManager, Camera& camera, SolengineV2::GameState& gameState);
 
 private:
 	SolengineV2::InputManager& inputManager;

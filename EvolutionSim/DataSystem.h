@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include <array>
+
 #include "DataComponent.h"
 
 class DataSystem
@@ -18,12 +18,10 @@ public:
 		TRAIT_SIZE
 	};
 
-	const DataComponent& getCComponent(Data dataHandle) const { return components[static_cast<int>(dataHandle)]; }
-	DataComponent& getComponent(Data dataHandle) { return components[static_cast<int>(dataHandle)]; }
-	const std::vector<float>& getData(Data dataHandle) const { return getCComponent(dataHandle).points; }
-	void addPoint(Data dataHandle, const float dataPoint) { getComponent(dataHandle).points.push_back(dataPoint); }
-	void clear(Data dataHandle) { getComponent(dataHandle).points = { 0.5f }; }
-
+	const std::vector<float>& getData(Data dataHandle) const;
+	void addPoint(Data dataHandle, const float dataPoint);
+	void clear(Data dataHandle);
+	void reserveAdditional(Data dataHandle, const size_t extraCapacity);
 	void reset();
 
 private:

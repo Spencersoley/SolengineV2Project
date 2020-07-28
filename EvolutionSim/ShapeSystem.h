@@ -1,16 +1,17 @@
-#include "ShaderProgram.h"
-#include "ShaderManager.h"
-#include <GeometryRenderer.h>
+#pragma once
 
+namespace SolengineV2
+{
+	class GeometryRenderer;
+	class ShaderManager;
+	struct ShaderProgram;
+}
+class BeingManager;
+struct SelectionBox;
+struct Camera;
 class TransformSystem;
 class CameraSystem;
 class SelectableSystem;
-class BeingManager;
-
-struct ShapeComponent
-{
-	SolengineV2::Square shape;
-};
 
 class ShapeSystem
 {
@@ -31,7 +32,7 @@ public:
 		selectableSystem(selSys)
 	{}
 
-	void process(const BeingManager& beings) const;
+	void update(const SelectionBox& selectionBox, const Camera& camera) const;
 
 private:
 	const SolengineV2::GeometryRenderer& renderer;
@@ -41,9 +42,4 @@ private:
 	const TransformSystem& transformSystem;
 	const CameraSystem& cameraSystem;
 	const SelectableSystem& selectableSystem;
-
-	struct
-	{
-		ShapeComponent selectionBox;
-	} components;
 };

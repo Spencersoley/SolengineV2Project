@@ -106,7 +106,7 @@ namespace SolengineV2
 				};
 				struct Inflator
 				{
-					int error;
+					int error{};
 					void inflate(std::vector<unsigned char>& out, const std::vector<unsigned char>& in, uint32_t inpos = 0)
 					{
 						uint32_t bp = 0, pos = 0; //bit pointer and byte pointer
@@ -254,11 +254,11 @@ namespace SolengineV2
 			{
 				struct Info
 				{
-					unsigned long width, height, colorType, bitDepth, compressionMethod, filterMethod, interlaceMethod, key_r, key_g, key_b;
-					bool key_defined; //is a transparent color key given?
+					unsigned long width{}, height{}, colorType{}, bitDepth{}, compressionMethod{}, filterMethod{}, interlaceMethod{}, key_r{}, key_g{}, key_b{};
+					bool key_defined{}; //is a transparent color key given?
 					std::vector<unsigned char> palette;
 				} info;
-				int error;
+				int error{};
 				void decode(std::vector<unsigned char>& out, const unsigned char* in, uint32_t size, bool convert_to_rgba32)
 				{
 					error = 0;
@@ -444,7 +444,7 @@ namespace SolengineV2
 				static unsigned long readBitsFromReversedStream(uint32_t& bitp, const unsigned char* bits, unsigned long nbits)
 				{
 					unsigned long result = 0;
-					for (uint32_t i = nbits - 1; i < nbits; i--) result += ((readBitFromReversedStream(bitp, bits)) << i);
+					for (int i = nbits - 1; i > 0; i--) result += ((readBitFromReversedStream(bitp, bits)) << i);
 					return result;
 				}
 				void setBitOfReversedStream(uint32_t& bitp, unsigned char* bits, unsigned long bit) { bits[bitp >> 3] |= (bit << (7 - (bitp & 0x7))); bitp++; }
