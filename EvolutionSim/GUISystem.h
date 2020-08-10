@@ -1,51 +1,37 @@
 #pragma once
 #include <IMGUI/imgui.h>
+#include <IMGUI/imgui_impl_sdl.h>
+#include <IMGUI/imgui_impl_opengl3.h>
+#include <IMGUI/implot.h>
+#include <numeric>
+#include <Window.h>
+#include <GameState.h>
 
 namespace SolengineV2
 {
 	class Window;
-	enum class GameState;
 }
-class TextureSystem;
+
 class BeingManager;
-class DataSystem;
-class GenerationSystem;
-class OverlaySystem;
-class SelectableSystem;
-class SurvivalSystem;
-class VelocitySystem;
+class DataPointManager;
+class GenerationManager;
+class OverlayConfig;
+class SelectedTracker;
+class TextureLibrary;
 
 class GUISystem
 {
-public:
-	GUISystem(
-		SolengineV2::Window& wndw,
-		const TextureSystem& textureSys,
-		VelocitySystem& velSys,
-		GenerationSystem& genSys,
-		DataSystem& dataSys,
-		OverlaySystem& overlaySys,
-		const GeneSystem& geneSys,
-		const SelectableSystem& selSys,
-		const SurvivalSystem& survSys
-	);
+	using Handle = unsigned int;
 
-	void update(BeingManager& beings, SolengineV2::GameState& state, unsigned int deltaTime);
+public:
+	void init(SolengineV2::Window& wndw);
+
+	void update(BeingManager& beings, DataPointManager& data, GenerationManager& generation, OverlayConfig& overlayConfig, SelectedTracker& selected, TextureLibrary& textureLibrary, SolengineV2::Window& window, SolengineV2::GameState& state, unsigned int deltaTime);
 
 private:
-	ImGuiIO io{};
-	SolengineV2::Window& window;
-	const TextureSystem& textureSystem;
+	void resetGame(SolengineV2::GameState& state, BeingManager& beings, GenerationManager& generation, DataPointManager& data, SelectedTracker& selected, TextureLibrary& textureLibrary);
 
-	enum class Menu { SETTINGS, HELP, OVERLAY } menu = Menu::SETTINGS;
-
-	VelocitySystem& velocitySystem;
-	GenerationSystem& generationSystem;
-	DataSystem& dataSystem;
-	OverlaySystem& overlaySystem;
-	const GeneSystem& geneSystem;
-	const SelectableSystem& selectableSystem;
-	const SurvivalSystem& survivalSystem;
-
-	void resetGame(SolengineV2::GameState& state, BeingManager& beings);
+	enum class Menu { SETTINGS, HELP, OVERLAY };
+	Menu menu{ Menu::SETTINGS };
 };
+

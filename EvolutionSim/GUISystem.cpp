@@ -1,21 +1,22 @@
-#include <IMGUI/imgui_impl_sdl.h>
-#include <IMGUI/imgui_impl_opengl3.h>
-#include <IMGUI/implot.h>
-#include <numeric>
-#include <Window.h>
-
-#include "GameState.h"
-
 #include "BeingManager.h"
-#include "DataSystem.h"
-#include "GenerationSystem.h"
-#include "GeneSystem.h"
-#include "GUISystem.h"
-#include "OverlaySystem.h"
-#include "SelectableSystem.h"
-#include "SurvivalSystem.h"
-#include "TextureSystem.h"
-#include "VelocitySystem.h"
+#include "GenerationManager.h"
+#include "DataPointManager.h"
+#include "SelectedTracker.h"
+#include "OverlayConfig.h"
+#include "TextureLibrary.h"
+
+#include "TextureLoaderSystemImplementation.h"
+
+#include "GUISystemImplementation.h"
+#include "DataSystemImplementation.h"
+#include "GenerationSystemImplementation.h"
+#include "GeneSystemImplementation.h"
+#include "OverlaySystemImplementation.h"
+#include "SelectableSystemImplementation.h"
+#include "SurvivalSystemImplementation.h"
+#include "VelocitySystemImplementation.h"
+
+#include "GeneEnum.h"
 
 constexpr const char* WAVE_NUMBER_TEXT{ "Wave number: %d" };
 constexpr const char* PHYSICS_SPEED_TEXT{ "Physics speed" };
@@ -31,49 +32,27 @@ constexpr const char* ANIMAL_COUNT_TEXT{ "Animals: %i" };
 
 constexpr const unsigned int MICROSECONDS_PER_UPDATE = 50000;
 
-using Data = DataSystem::Data;
-using BeingType = GeneComponent::BeingType;
-using Trait = GeneComponent::Trait;
-using Handle = unsigned int;
+using BeingType = Gene::BeingType;
+using Trait = Gene::Trait;
 
-GUISystem::GUISystem(
-	SolengineV2::Window& wndw,
-	const TextureSystem& textureSys,
-	VelocitySystem& velSys,
-	GenerationSystem& genSys,
-	DataSystem& dataSys,
-	OverlaySystem& overlaySys,
-	const GeneSystem& geneSys,
-	const SelectableSystem& selSys,
-	const SurvivalSystem& survSys
-) :
-	window(wndw),
-	textureSystem(textureSys),
-	velocitySystem(velSys),
-	generationSystem(genSys),
-	dataSystem(dataSys),
-	overlaySystem(overlaySys),
-	geneSystem(geneSys),
-	selectableSystem(selSys),
-	survivalSystem(survSys)
+void GUISystem::init(SolengineV2::Window& wndw)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	io = ImGui::GetIO();
 
 	//ImGui::StyleColorsClassic();
 	//ImGui::StyleColorsDark();
 	ImGui::StyleColorsCustom();
 
-	ImGui_ImplSDL2_InitForOpenGL(window.getWindow(), window.getContext());
+	ImGui_ImplSDL2_InitForOpenGL(wndw.getWindow(), wndw.getContext());
 	const char* glslVersion = "#version 130";
 	ImGui_ImplOpenGL3_Init(glslVersion);
-}
+};
 
-void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsigned int dt)
+void GUISystem::update(BeingManager& beings, DataPointManager& data, GenerationManager& generation, OverlayConfig& overlayConfig, SelectedTracker& selected, TextureLibrary& textureLibrary, SolengineV2::Window& window, SolengineV2::GameState& state, unsigned int deltaTime)
 {
 	static unsigned int microsecondsFromLastUpdate = 0;
-	microsecondsFromLastUpdate += dt;
+	microsecondsFromLastUpdate += deltaTime;
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window.getWindow());
@@ -102,14 +81,14 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 
 			if (menu == Menu::SETTINGS)
 			{
-				ImGui::SliderFloat(PHYSICS_SPEED_TEXT, &velocitySystem.getPhysicsSpeed(), 1, 1000);
-				ImGui::SliderInt(FOOD_PER_GENERATION_TEXT, &generationSystem.getFoodPerGeneration(), 1, 150);
-				ImGui::Text(WAVE_NUMBER_TEXT, generationSystem.getWaveCount());
-				ImGui::Text(ANIMAL_COUNT_TEXT, generationSystem.getAnimalCount());
-				ImGui::Text(PLANT_COUNT_TEXT, generationSystem.getPlantCount());
+				ImGui::SliderFloat(PHYSICS_SPEED_TEXT, &Generation::System::getPhysicsSpeedRef(generation.component), 1, 1000);
+				ImGui::SliderInt(FOOD_PER_GENERATION_TEXT, &Generation::System::getFoodPerGenerationRef(generation.component), 1, 150);
+				ImGui::Text(WAVE_NUMBER_TEXT, Generation::System::getWaveCount(generation.component));
+				ImGui::Text(ANIMAL_COUNT_TEXT, Generation::System::getAnimalCount(generation.component));
+				ImGui::Text(PLANT_COUNT_TEXT, Generation::System::getPlantCount(generation.component));
 				if (ImGui::Button("Reset", ImVec2(225, 0)))
 				{
-					resetGame(state, beings);
+					resetGame(state, beings, generation, data, selected, textureLibrary);
 				}
 			}
 			else if (menu == Menu::HELP)
@@ -118,25 +97,25 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 				ImVec2 guiWindowSize = ImGui::GetWindowSize();
 
 				ImGui::SameLine();
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::BEING_1), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_1, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 				ImGui::SameLine();
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::MEAT), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::MEAT, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 				ImGui::SameLine();
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::PLANT), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::PLANT, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 
 				if (ImGui::CollapsingHeader("Controls"))
 				{
 					ImGui::Dummy(ImVec2(60.0f, 20.0f));
 					ImGui::SameLine();
-					ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::KEYS), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+					ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::KEYS, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 					ImGui::SameLine();
-					ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::CAMERA), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+					ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::CAMERA, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 
 					ImGui::Dummy(ImVec2(60.0f, 20.0f));
 					ImGui::SameLine();
-					ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::KEYS_2), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+					ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::KEYS_2, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 					ImGui::SameLine();
-					ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::ZOOM), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
+					ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::ZOOM, textureLibrary), ImVec2(guiWindowSize.x / 4, guiWindowSize.y / 4), ImVec2(0, -1), ImVec2(1, 0));
 
 
 					ImGui::EndChild();
@@ -162,16 +141,16 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 		if (ImGui::Begin("Plots"))
 		{
 			static int dataSizeMilestone = 1000;
-			int size = dataSystem.getData(Data::SPEED).size();
+			int size = Data::System::getData(data.speed).size();
 			if (size > dataSizeMilestone)
 			{
 				//resize data
-				dataSystem.reserveAdditional(Data::SPEED, 1000);
-				dataSystem.reserveAdditional(Data::STAMINA, 1000);
-				dataSystem.reserveAdditional(Data::STRENGTH, 1000);
-				dataSystem.reserveAdditional(Data::DIET, 1000);
-				dataSystem.reserveAdditional(Data::ANIMAL_POPULATION, 1000);
-				dataSystem.reserveAdditional(Data::PLANT_POPULATION, 1000);
+				Data::System::reserveAdditional(data.speed, 1000);
+				Data::System::reserveAdditional(data.stamina, 1000);
+				Data::System::reserveAdditional(data.strength, 1000);
+				Data::System::reserveAdditional(data.diet, 1000);
+				Data::System::reserveAdditional(data.animalPopulation, 1000);
+				Data::System::reserveAdditional(data.plantPopulation, 1000);
 
 				dataSizeMilestone += 1000;
 			}
@@ -186,21 +165,21 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 
 				ImPlot::BeginPlot("Trait history", "Generations", "Genes");
 				ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
-				ImPlot::PlotLine("Speed", x.data(), dataSystem.getData(Data::SPEED).data(), size, 0);
-				ImPlot::PlotLine("Strength", x.data(), dataSystem.getData(Data::STRENGTH).data(), size, 0);
-				ImPlot::PlotLine("Diet", x.data(), dataSystem.getData(Data::DIET).data(), size, 0);
-				ImPlot::PlotLine("Stamina", x.data(), dataSystem.getData(Data::STAMINA).data(), size, 0);
+				ImPlot::PlotLine("Speed", x.data(), Data::System::getData(data.speed).data(), size, 0);
+				ImPlot::PlotLine("Strength", x.data(), Data::System::getData(data.strength).data(), size, 0);
+				ImPlot::PlotLine("Diet", x.data(), Data::System::getData(data.diet).data(), size, 0);
+				ImPlot::PlotLine("Stamina", x.data(), Data::System::getData(data.stamina).data(), size, 0);
 
 				ImPlot::EndPlot();
 			}
-			else if (ImPlot::SetNextPlotLimitsY(0.0f, dataSystem.getData(Data::BEING_MAXIMUM).back(), ImGuiCond_Always); ImGui::CollapsingHeader("Population history"))
+			else if (ImPlot::SetNextPlotLimitsY(0.0f, Data::System::getData(data.beingMaximum).back(), ImGuiCond_Always); ImGui::CollapsingHeader("Population history"))
 			{
 				ImPlot::SetColormap(ImPlotColormap_Default, 5);
 
 				ImPlot::BeginPlot("Population history", "Generations", "Population");
 				ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
-				ImPlot::PlotLine("Animal", x.data(), dataSystem.getData(Data::ANIMAL_POPULATION).data(), size, 0);
-				ImPlot::PlotLine("Plant", x.data(), dataSystem.getData(Data::PLANT_POPULATION).data(), size, 0);
+				ImPlot::PlotLine("Animal", x.data(), Data::System::getData(data.animalPopulation).data(), size, 0);
+				ImPlot::PlotLine("Plant", x.data(), Data::System::getData(data.plantPopulation).data(), size, 0);
 				ImPlot::EndPlot();
 			}
 			ImGui::End();
@@ -209,18 +188,18 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 		// SELECTED BEING
 		if (ImGui::Begin("Selected Being Panel"))
 		{
-			if (const Handle selectedHandle = selectableSystem.getCSelectedHandle(); selectedHandle < beings.getSize())
+			if (const Handle selectedHandle = Selectable::System::getHandle(selected.component); selectedHandle < beings.getSize())
 			{
 				const GeneComponent& gene = beings.pool[selectedHandle].gene;
-				ImGui::Text(geneSystem.getBeingType(gene) == BeingType::ANIMAL ? "Animal" : "Plant");
-				if (geneSystem.getBeingType(gene) == BeingType::ANIMAL)
+				ImGui::Text(Gene::System::getBeingType(gene) == BeingType::ANIMAL ? "Animal" : "Plant");
+				if (Gene::System::getBeingType(gene) == BeingType::ANIMAL)
 				{
-					ImGui::Text(BEING_SPEED_TEXT, geneSystem.getTrait(gene, Trait::SPEED));
-					ImGui::Text(BEING_DIET_TEXT, geneSystem.getTrait(gene, Trait::DIET));
-					ImGui::Text(BEING_STRENGTH_TEXT, geneSystem.getTrait(gene, Trait::STRENGTH));
-					ImGui::Text(BEING_STAMINA_TEXT, geneSystem.getTrait(gene, Trait::STAMINA));
-					ImGui::Text(BEING_FULLNESS_TEXT, static_cast<int>(0.1f * survivalSystem.getBeingFullness(beings.pool[selectedHandle].survival) / geneSystem.getTrait(gene, Trait::HUNGER)));
-					ImGui::Text(BEING_ENERGY_TEXT, static_cast<int>(0.1f * survivalSystem.getBeingEnergy(beings.pool[selectedHandle].survival) / geneSystem.getTrait(gene, Trait::STAMINA)));
+					ImGui::Text(BEING_SPEED_TEXT, Gene::System::getTrait(gene, Trait::SPEED));
+					ImGui::Text(BEING_DIET_TEXT, Gene::System::getTrait(gene, Trait::DIET));
+					ImGui::Text(BEING_STRENGTH_TEXT, Gene::System::getTrait(gene, Trait::STRENGTH));
+					ImGui::Text(BEING_STAMINA_TEXT, Gene::System::getTrait(gene, Trait::STAMINA));
+					ImGui::Text(BEING_FULLNESS_TEXT, static_cast<int>(0.1f * Survival::System::getFullness(beings.pool[selectedHandle].survival) / Gene::System::getTrait(gene, Trait::HUNGER)));
+					ImGui::Text(BEING_ENERGY_TEXT, static_cast<int>(0.1f * Survival::System::getEnergy(beings.pool[selectedHandle].survival) / Gene::System::getTrait(gene, Trait::STAMINA)));
 				}
 			}
 			ImGui::End();
@@ -229,73 +208,72 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 		/// OVERLAY KEY ///
 		if (ImGui::Begin("Overlay"))
 		{
-
-			OverlaySystem::Overlay overlay = overlaySystem.getOverlay();
+			OverlayMode overlay = Overlay::System::getOverlay(overlayConfig.component);
 			ImVec2 guiWindowSize = ImGui::GetWindowSize();
 
 			if (ImGui::Button("Default", ImVec2(100, 25)))
 			{
-				overlaySystem.setOverlay(OverlaySystem::Overlay::DEFAULT);
-				overlaySystem.updateOverlay(beings);
+				Overlay::System::setOverlay(overlayConfig.component, OverlayMode::DEFAULT);
+				Overlay::System::updateOverlay(beings, overlayConfig);
 			}
 			if (ImGui::Button("Strength", ImVec2(100, 25)))
 			{
-				overlaySystem.setOverlay(OverlaySystem::Overlay::STRENGTH);
-				overlaySystem.updateOverlay(beings);
+				Overlay::System::setOverlay(overlayConfig.component, OverlayMode::STRENGTH);
+				Overlay::System::updateOverlay(beings, overlayConfig);
 			}
 			if (ImGui::Button("Stamina", ImVec2(100, 25)))
 			{
-				overlaySystem.setOverlay(OverlaySystem::Overlay::STAMINA);
-				overlaySystem.updateOverlay(beings);
+				Overlay::System::setOverlay(overlayConfig.component, OverlayMode::STAMINA);
+				Overlay::System::updateOverlay(beings, overlayConfig);
 			}
 			if (ImGui::Button("Speed", ImVec2(100, 25)))
 			{
-				overlaySystem.setOverlay(OverlaySystem::Overlay::SPEED);
-				overlaySystem.updateOverlay(beings);
+				Overlay::System::setOverlay(overlayConfig.component, OverlayMode::SPEED);
+				Overlay::System::updateOverlay(beings, overlayConfig);
 			}
 			if (ImGui::Button("Diet", ImVec2(100, 25)))
 			{
-				overlaySystem.setOverlay(OverlaySystem::Overlay::DIET);
-				overlaySystem.updateOverlay(beings);
+				Overlay::System::setOverlay(overlayConfig.component, OverlayMode::DIET);
+				Overlay::System::updateOverlay(beings, overlayConfig);
 			}
 
 
-			if (overlay == OverlaySystem::Overlay::DEFAULT)
+			if (overlay == OverlayMode::DEFAULT)
 			{
 
 			}
-			else if (overlay == OverlaySystem::Overlay::STAMINA)
+			else if (overlay == OverlayMode::STAMINA)
 			{
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::STAMINA_GRADIENT), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::STAMINA_GRADIENT, textureLibrary), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
 
 			}
-			else if (overlay == OverlaySystem::Overlay::SPEED)
+			else if (overlay == OverlayMode::SPEED)
 			{
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::SPEED_GRADIENT), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::SPEED_GRADIENT, textureLibrary), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
 
 			}
-			else if (overlay == OverlaySystem::Overlay::STRENGTH)
+			else if (overlay == OverlayMode::STRENGTH)
 			{
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::STRENGTH_GRADIENT), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::STRENGTH_GRADIENT, textureLibrary), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
 
 			}
-			else if (overlay == OverlaySystem::Overlay::DIET)
+			else if (overlay == OverlayMode::DIET)
 			{
-				ImGui::Image((ImTextureID)textureSystem.getTextureID(TextureSystem::Component::DIET_GRADIENT), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
+				ImGui::Image((ImTextureID)TextureLoader::System::getTextureID(TextureLibrary::Texture::DIET_GRADIENT, textureLibrary), guiWindowSize, ImVec2(0, -1), ImVec2(1, 0));
 
 			}
 			ImGui::End();
 		}
 
 		/// RESET MENU ///
-		if (generationSystem.getAnimalCount() == 0)
+		if (Generation::System::getAnimalCount(generation.component) == 0)
 		{
 			ImGui::Begin("There are no more animals alive. The simulation has ended!");
 			state = SolengineV2::GameState::PAUSE;
 
 			if (ImGui::Button("Reset", ImVec2(225, 0)))
 			{
-				resetGame(state, beings);
+				resetGame(state, beings, generation, data, selected, textureLibrary);
 			}
 
 			if (ImGui::Button("Exit", ImVec2(225, 0)))
@@ -310,9 +288,16 @@ void GUISystem::update(BeingManager& beings, SolengineV2::GameState& state, unsi
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void GUISystem::resetGame(SolengineV2::GameState& state, BeingManager& beings)
+inline void GUISystem::resetGame(SolengineV2::GameState& state, BeingManager& beings, GenerationManager& generation, DataPointManager& data, SelectedTracker& selected, TextureLibrary& textureLibrary)
 {
 	state = SolengineV2::GameState::PLAY;
-	dataSystem.reset();
-	generationSystem.begin(beings);
+	Data::System::clear(data.speed);
+	Data::System::clear(data.stamina);
+	Data::System::clear(data.strength);
+	Data::System::clear(data.diet);
+	Data::System::clear(data.animalPopulation);
+	Data::System::clear(data.beingMaximum);
+	Data::System::clear(data.plantPopulation);
+
+	Generation::System::begin(beings, generation, selected, textureLibrary);
 }

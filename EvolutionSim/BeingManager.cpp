@@ -1,16 +1,9 @@
 #pragma once
 #include "BeingManager.h"
-#include "BeingCreateInfo.h"
+#include "GeneEnum.h"
 
-#include "TransformSystem.h"
-#include "SpriteSystem.h"
-#include "GeneSystem.h"
-#include "VelocitySystem.h"
-#include "SurvivalSystem.h"
-#include "Being.h"
-
-using Trait = GeneComponent::Trait;
-using BeingType = GeneComponent::BeingType;
+using Trait = Gene::Trait;
+using BeingType = Gene::BeingType;
 
 size_t BeingManager::getSize() const
 {
@@ -25,13 +18,7 @@ void BeingManager::init(const size_t size)
 
 void BeingManager::deleteBeing(const Handle handle, Handle& selectedHandle)
 {
-	const size_t size = getSize();
-	if (handle >= size)
-	{
-		throw std::exception("handle outside of being pool range");
-	}
-	if (selectedHandle == size - 1) selectedHandle = handle;
-	if (selectedHandle == handle) selectedHandle = size;
+
 
 	pool[handle] = pool.back();
 	pool.pop_back();

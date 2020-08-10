@@ -3,11 +3,7 @@
 
 class TransformComponent
 {
-	friend class TransformSystem;
-	friend struct Being;
-	friend struct Camera;
-	friend struct BackgroundImage;
-	friend struct SelectionBox;
+	template <class T> friend class TransformSystemInterface;
 
 	glm::vec2 pos{ 0.0f };
 	glm::vec2 dims{ 0.0f };

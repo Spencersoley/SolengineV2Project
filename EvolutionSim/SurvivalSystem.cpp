@@ -1,142 +1,104 @@
-#include <algorithm>
-
+#include "BeingManager.h"
+#include "GenerationManager.h"
+#include "TextureLibrary.h"
+#include "DefaultColours.h"
 #include "ArenaSize.h"
 
-#include "BeingManager.h"
-#include "GenerationSystem.h"
-#include "GeneSystem.h"
-#include "SpriteSystem.h"
-#include "SurvivalSystem.h"
-#include "TransformSystem.h"
-#include "VelocitySystem.h"
-#include "TextureSystem.h"
+#include "TextureLoaderSystemImplementation.h"
+#include "SpriteSystemImplementation.h"
+#include "TransformSystemImplementation.h"
+#include "GeneSystemImplementation.h"
+#include "GenerationSystemImplementation.h"
+#include "VelocitySystemImplementation.h"
 
-constexpr float DEPLETION_MODIFIER = 0.0000005f;
+#include "SurvivalSystemImplementation.h"
+#include <glm\geometric.hpp>
 
 using SurvivalState = SurvivalComponent::SurvivalState;
-using Handle = unsigned int;
+constexpr float DEPLETION_MODIFIER = 0.0000005f;
 
-bool SurvivalSystem::getIsAlive(const SurvivalComponent& component) const
-{
-	return component.isAlive;
-}
-
-SurvivalState SurvivalSystem::getSurvivalState(const SurvivalComponent& component) const
-{
-	return component.state;
-}
-
-void SurvivalSystem::setSurvivalState(SurvivalComponent& component, const SurvivalState state) const
-{
-	component.state = state;
-}
-
-void SurvivalSystem::setIsAlive(SurvivalComponent& component, const bool isAlive) const
-{
-	component.isAlive = isAlive;
-}
-
-void SurvivalSystem::setFullness(SurvivalComponent& component, float set) const
-{
-	component.fullness = set;
-}
-
-float SurvivalSystem::getBeingEnergy(const SurvivalComponent& component) const
-{
-	return component.energy;
-}
-
-float SurvivalSystem::getBeingFullness(const SurvivalComponent& component) const
-{
-	return component.fullness;
-}
-
-void SurvivalSystem::setStamina(SurvivalComponent& component, float set) const
-{
-	component.energy = set * 1000.0f;
-}
-
-void SurvivalSystem::update(BeingManager& beings, uint32_t dt)
+void SurvivalSystem::update(BeingManager& beings, uint32_t dt, GenerationManager& generationManager, TextureLibrary& textureLibrary)
 {
 	int waveState{ static_cast<int>(WaveState::NOTHING_ACTIVE) };
-	waveOver = false;
+	Generation::System::setWaveOver(generationManager.component, false);
 
 	// Get handles of all beings which are food
-	if (getFoodHandlesNeedUpdate())
+	if (Generation::System::getFoodHandlesNeedUpdate(generationManager.component))
 	{
+		std::vector<Handle>& foodHandles = Generation::System::getFoodHandles(generationManager.component);
 		foodHandles.clear();
 		size_t poolSize = beings.pool.size();
 		for (Handle beingHandle = 0; beingHandle < poolSize; beingHandle++)
 		{
-			if (!getIsAlive(beings.pool[beingHandle].survival))
+			if (!Survival::System::getIsAlive(beings.pool[beingHandle].survival))
 			{
 				foodHandles.push_back(beingHandle);
 			}
 		}
 
-		setFoodHandlesNeedUpdate(false);
+		Generation::System::setFoodHandlesNeedUpdate(generationManager.component, false);
 	}
 
 	static unsigned int frameCount = 0;
 	if (++frameCount % 20 != 0) return;
 	if (frameCount > 1000) frameCount = 0;
 
-	float depletion = DEPLETION_MODIFIER * static_cast<float>(dt) * velocitySystem.getPhysicsSpeedVal();
+	float depletion = DEPLETION_MODIFIER * static_cast<float>(dt) * Generation::System::getPhysicsSpeed(generationManager.component);
 
-	const auto processSurvivalBehaviour = [this, &waveState, depletion, &beings](Being& being)
+	const auto processSurvivalBehaviour = [this, &waveState, depletion, &beings, &generationManager, &textureLibrary](Being& being)
 	{
-		if (!getIsAlive(being.survival))
+		if (!Survival::System::getIsAlive(being.survival))
 		{
 			waveState = waveState | static_cast<int>(WaveState::FOOD_ACTIVE); //there IS food
 			wait(being);
 		}
-		else if (getSurvivalState(being.survival) == SurvivalState::AWAITING)
+		else if (Survival::System::getSurvivalState(being.survival) == SurvivalState::AWAITING)
 		{
 			wait(being);
 		}
-		else if (getSurvivalState(being.survival) == SurvivalState::SEARCHING)
+		else if (Survival::System::getSurvivalState(being.survival) == SurvivalState::SEARCHING)
 		{
-			if (depleteEnergy(being.survival, depletion))
+			if (depleteEnergyAndReturnIsZero(being.survival, depletion))
 			{
-				killAnimal(being);
+				killAnimal(being, textureLibrary);
 			}
 			else
 			{
 				// SEEK FOOD
-				const glm::vec2& beingPosition = transformSystem.getPos(being.transform);
-				const glm::vec2 nearestFoodPosition = findNearestFoodToPoint(beingPosition, beings, foodHandles);
+				const glm::vec2& beingPosition = Transform::System::getPos(being.transform);
+				const glm::vec2 nearestFoodPosition = findNearestFoodToPoint(beingPosition, beings, Generation::System::getFoodHandles(generationManager.component));
 				if (nearestFoodPosition == beingPosition) // if no food found
 				{
-					velocitySystem.setVelocity(being.velocity, 0.0f);
+					Velocity::System::setVelocity(being.velocity, 0.0f);
 				}
 				else
 				{
 					const glm::vec2& directionToFood = glm::normalize(glm::vec2(nearestFoodPosition.x - beingPosition.x, nearestFoodPosition.y - beingPosition.y));
-					velocitySystem.setDirection(being.velocity, directionToFood);
-					velocitySystem.setVelocity(being.velocity, geneSystem.getTrait(being.gene, Trait::SPEED));
+					Velocity::System::setDirection(being.velocity, directionToFood);
+					Velocity::System::setVelocity(being.velocity, Gene::System::getTrait(being.gene, Trait::SPEED));
 				}
 				waveState = waveState | static_cast<int>(WaveState::SEARCHERS_ACTIVE); //there IS searchers
 			}
 		}
-		else if (getSurvivalState(being.survival) == SurvivalState::RETURNING)
+		else if (Survival::System::getSurvivalState(being.survival) == SurvivalState::RETURNING)
 		{
-			if (depleteEnergy(being.survival, depletion))
+			if (depleteEnergyAndReturnIsZero(being.survival, depletion))
 			{
-				killAnimal(being);
+				killAnimal(being, textureLibrary);
 			}
 			else
 			{
 				// SEEK HOME 
-				const glm::vec2& pos = transformSystem.getPos(being.transform);
+				const glm::vec2& pos = Transform::System::getPos(being.transform);
 				if (glm::length(pos) > ARENA_SIZE / 2.0f)
 				{
-					setSurvivalState(being.survival, SurvivalState::AWAITING);
+					Survival::System::setSurvivalState(being.survival, SurvivalState::AWAITING);
 				}
 				else
 				{
-					velocitySystem.setVelocity(being.velocity, geneSystem.getTrait(being.gene, Trait::SPEED));
+					Velocity::System::setVelocity(being.velocity, Gene::System::getTrait(being.gene, Trait::SPEED));
 					//direction is normalised position, since we're just retreating from the centre.
-					velocitySystem.setDirection(being.velocity, glm::normalize(pos));
+					Velocity::System::setDirection(being.velocity, glm::normalize(pos));
 				}
 				waveState = waveState | static_cast<int>(WaveState::RETURNERS_ACTIVE); //there IS returners
 			}
@@ -147,11 +109,11 @@ void SurvivalSystem::update(BeingManager& beings, uint32_t dt)
 
 	if (!(waveState & static_cast<int>(WaveState::FOOD_ACTIVE))) // if NO food
 	{
-		const auto killIfStillSearching = [this](Being& being)
+		const auto killIfStillSearching = [this, &textureLibrary](Being& being)
 		{
-			if (getSurvivalState(being.survival) == SurvivalState::SEARCHING)
+			if (Survival::System::getSurvivalState(being.survival) == SurvivalState::SEARCHING)
 			{
-				killAnimal(being);
+				killAnimal(being, textureLibrary);
 			}
 		};
 
@@ -160,7 +122,7 @@ void SurvivalSystem::update(BeingManager& beings, uint32_t dt)
 
 	if (!(waveState & static_cast<int>(WaveState::RETURNERS_ACTIVE)) && !(waveState & static_cast<int>(WaveState::SEARCHERS_ACTIVE))) // if NO returners and NO searchers
 	{
-		waveOver = true;
+		Generation::System::setWaveOver(generationManager.component, true);
 	}
 }
 
@@ -170,9 +132,9 @@ glm::vec2 SurvivalSystem::findNearestFoodToPoint(const glm::vec2& point, const B
 	float defaultClosest = glm::distance(nearest, point);
 	float closestDist = defaultClosest;
 
-	const auto compareToClosest = [&nearest, &closestDist, this, &beings, &point](Handle handle)
+	const auto compareToClosest = [&nearest, &closestDist, &beings, &point](Handle handle)
 	{
-		const glm::vec2& foodPos = transformSystem.getPos(beings.pool[handle].transform);
+		const glm::vec2& foodPos = Transform::System::getPos(beings.pool[handle].transform);
 		const float dist = glm::distance(foodPos, point);
 		if (dist < closestDist)
 		{
@@ -186,23 +148,24 @@ glm::vec2 SurvivalSystem::findNearestFoodToPoint(const glm::vec2& point, const B
 	return (defaultClosest == closestDist) ? point : nearest;
 }
 
-//true when energy is depleted
-bool SurvivalSystem::depleteEnergy(SurvivalComponent& component, float depletion) const
+bool SurvivalSystem::depleteEnergyAndReturnIsZero(SurvivalComponent& component, float depletion) const
 {
-	component.energy = std::max(component.energy - depletion, 0.0f);
+	float energy = std::max(Survival::System::getEnergy(component) - depletion, 0.0f);
 
-	return component.energy == 0.0f;
+	Survival::System::setEnergy(component, energy);
+
+	return energy == 0.0f;
 }
 
 void SurvivalSystem::wait(Being& being) const
 {
-	velocitySystem.setVelocity(being.velocity, 0);
+	Velocity::System::setVelocity(being.velocity, 0);
 }
 
-void SurvivalSystem::killAnimal(Being& being)
+void SurvivalSystem::killAnimal(Being& being, TextureLibrary& textureLibrary)
 {
-	spriteSystem.setColour(being.sprite, DEAD_ANIMAL_COLOUR);
-	spriteSystem.setTextureID(being.sprite, textureSystem.getTextureID(TextureSystem::Component::MEAT));
-	setSurvivalState(being.survival, SurvivalState::AWAITING);
-	setIsAlive(being.survival, false);
+	Sprite::System::setColour(being.sprite, DEAD_ANIMAL_COLOUR);
+	Sprite::System::setTextureID(being.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::MEAT, textureLibrary));
+	Survival::System::setSurvivalState(being.survival, SurvivalState::AWAITING);
+	Survival::System::setIsAlive(being.survival, false);
 }

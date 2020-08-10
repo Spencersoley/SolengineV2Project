@@ -1,9 +1,14 @@
 #include "BeingManager.h"
-#include "GeneSystem.h"
-#include "OverlaySystem.h"
-#include "SpriteSystem.h"
-#include "SurvivalSystem.h"
+#include "OverlayConfig.h"
+#include "GeneEnum.h"
 #include "DefaultColours.h"
+
+#include "OverlaySystemImplementation.h"
+#include "SpriteSystemImplementation.h"
+#include "SurvivalSystemImplementation.h"
+#include "GeneSystemImplementation.h"
+
+using Colour = SolengineV2::Colour;
 
 constexpr Colour LIGHT_GREENBLUE(126, 241, 175, 255);
 constexpr Colour BLUE(22, 4, 255, 255);
@@ -36,7 +41,7 @@ inline Colour triLerpRGB(const Colour& a, const Colour& b, const Colour& c, floa
 			static_cast<GLubyte>(static_cast<float>(b.r + (c.r - b.r)) * (traitValue0to1 - 0.5f) * 2.0f),
 			static_cast<GLubyte>(static_cast<float>(b.g + (c.g - b.g)) * (traitValue0to1 - 0.5f) * 2.0f),
 			static_cast<GLubyte>(static_cast<float>(b.b + (c.b - b.b)) * (traitValue0to1 - 0.5f) * 2.0f),
-		    255
+			255
 		);
 	}
 }
@@ -52,85 +57,81 @@ inline Colour biLerpRGB(const Colour& a, const Colour& b, float traitValue0to1)
 	);
 }
 
-void OverlaySystem::setOverlay(Overlay overlay)
+void OverlaySystem::updateOverlay(BeingManager& beings, OverlayConfig& overlay) const
 {
-	currentOverlay = overlay;
-}
-
-void OverlaySystem::updateOverlay(BeingManager& beings) const
-{
-	if (currentOverlay == Overlay::STRENGTH)
+	OverlayMode overlayMode = Overlay::System::getOverlay(overlay.component);
+	if (overlayMode == OverlayMode::STRENGTH)
 	{
-		const auto setColourBasedOnStrength = [this](Being& being)
+		const auto setColourBasedOnStrength = [](Being& being)
 		{
-			if (this->geneSystem.getBeingType(being.gene) == GeneComponent::BeingType::ANIMAL && this->survivalSystem.getIsAlive(being.survival))
+			if (Gene::System::getBeingType(being.gene) == Gene::BeingType::ANIMAL && Survival::System::getIsAlive(being.survival))
 			{
-				float strengthTrait = this->geneSystem.getTrait(being.gene, GeneComponent::Trait::STRENGTH);
+				float strengthTrait = Gene::System::getTrait(being.gene, Gene::Trait::STRENGTH);
 
-				spriteSystem.setColour(being.sprite, biLerpRGB(LIGHT_YELLOW, RED, strengthTrait));
+				Sprite::System::setColour(being.sprite, biLerpRGB(LIGHT_YELLOW, RED, strengthTrait));
 			}
 		};
 
 		std::for_each(begin(beings.pool), end(beings.pool), setColourBasedOnStrength);
 	}
-	else if (currentOverlay == Overlay::STAMINA)
+	else if (overlayMode == OverlayMode::STAMINA)
 	{
-		const auto setColourBasedOnStamina = [this](Being& being)
+		const auto setColourBasedOnStamina = [](Being& being)
 		{
-			if (this->geneSystem.getBeingType(being.gene) == GeneComponent::BeingType::ANIMAL && this->survivalSystem.getIsAlive(being.survival))
+			if (Gene::System::getBeingType(being.gene) == Gene::BeingType::ANIMAL && Survival::System::getIsAlive(being.survival))
 			{
-				float stamina = this->geneSystem.getTrait(being.gene, GeneComponent::Trait::STAMINA);
+				float stamina = Gene::System::getTrait(being.gene, Gene::Trait::STAMINA);
 
-				spriteSystem.setColour(being.sprite, biLerpRGB(PURPLE, YELLOW, stamina));
+				Sprite::System::setColour(being.sprite, biLerpRGB(PURPLE, YELLOW, stamina));
 			}
 		};
 
 		std::for_each(begin(beings.pool), end(beings.pool), setColourBasedOnStamina);
 
 	}
-	else if (currentOverlay == Overlay::SPEED)
+	else if (overlayMode == OverlayMode::SPEED)
 	{
-		const auto setColourBasedOnSpeed = [this](Being& being)
+		const auto setColourBasedOnSpeed = [](Being& being)
 		{
-			if (this->geneSystem.getBeingType(being.gene) == GeneComponent::BeingType::ANIMAL && this->survivalSystem.getIsAlive(being.survival))
+			if (Gene::System::getBeingType(being.gene) == Gene::BeingType::ANIMAL && Survival::System::getIsAlive(being.survival))
 			{
-				float speed = this->geneSystem.getTrait(being.gene, GeneComponent::Trait::SPEED);
+				float speed = Gene::System::getTrait(being.gene, Gene::Trait::SPEED);
 
-				spriteSystem.setColour(being.sprite, biLerpRGB(LIGHT_GREENBLUE, BLUE, speed));
+				Sprite::System::setColour(being.sprite, biLerpRGB(LIGHT_GREENBLUE, BLUE, speed));
 			}
 		};
 
 		std::for_each(begin(beings.pool), end(beings.pool), setColourBasedOnSpeed);
 	}
-	else if (currentOverlay == Overlay::DIET)
+	else if (overlayMode == OverlayMode::DIET)
 	{
-		const auto setColourBasedOnDiet = [this](Being& being)
+		const auto setColourBasedOnDiet = [](Being& being)
 		{
-			if (this->geneSystem.getBeingType(being.gene) == GeneComponent::BeingType::ANIMAL && this->survivalSystem.getIsAlive(being.survival))
+			if (Gene::System::getBeingType(being.gene) == Gene::BeingType::ANIMAL && Survival::System::getIsAlive(being.survival))
 			{
-				float diet = this->geneSystem.getTrait(being.gene, GeneComponent::Trait::DIET);
+				float diet = Gene::System::getTrait(being.gene, Gene::Trait::DIET);
 
-				spriteSystem.setColour(being.sprite, biLerpRGB(DEEP_GREEN, RED, diet));
+				Sprite::System::setColour(being.sprite, biLerpRGB(DEEP_GREEN, RED, diet));
 			}
 		};
 
 		std::for_each(begin(beings.pool), end(beings.pool), setColourBasedOnDiet);
 	}
-	else if (currentOverlay == Overlay::DEFAULT)
+	else if (overlayMode == OverlayMode::DEFAULT)
 	{
-		const auto setColourToDefault = [this](Being& being)
+		const auto setColourToDefault = [](Being& being)
 		{
-			if (this->survivalSystem.getIsAlive(being.survival))
+			if (Survival::System::getIsAlive(being.survival))
 			{
-				spriteSystem.setColour(being.sprite, ANIMAL_COLOUR);
+				Sprite::System::setColour(being.sprite, ANIMAL_COLOUR);
 			}
-			else if (this->geneSystem.getBeingType(being.gene) == GeneComponent::BeingType::ANIMAL)
+			else if (Gene::System::getBeingType(being.gene) == Gene::BeingType::ANIMAL)
 			{
-				spriteSystem.setColour(being.sprite, DEAD_ANIMAL_COLOUR);
+				Sprite::System::setColour(being.sprite, DEAD_ANIMAL_COLOUR);
 			}
 			else
 			{
-				spriteSystem.setColour(being.sprite, PLANT_COLOUR);
+				Sprite::System::setColour(being.sprite, PLANT_COLOUR);
 			}
 		};
 
@@ -138,7 +139,3 @@ void OverlaySystem::updateOverlay(BeingManager& beings) const
 	}
 }
 
-OverlaySystem::Overlay OverlaySystem::getOverlay() const
-{
-	return currentOverlay;
-}

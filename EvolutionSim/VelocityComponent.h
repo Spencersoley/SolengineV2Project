@@ -3,8 +3,7 @@
 
 class VelocityComponent
 {
-	friend class VelocitySystem;
-	friend class BeingManager;
+	template<class T> friend class VelocitySystemInterface;
 
 	glm::vec2 direction{ 0.0f };
 	float velocity{ 0.0f };

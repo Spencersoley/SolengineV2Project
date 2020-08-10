@@ -11,8 +11,7 @@ public:
 	};
 
 private:
-	friend class SurvivalSystem;
-	friend struct Being;
+	template <class T> friend class SurvivalSystemInterface;
 
 	float fullness{ 0.0f };
 	float energy{ 0.0f };

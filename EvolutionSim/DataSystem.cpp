@@ -1,28 +1,17 @@
-#include "DataSystem.h"
+#include "DataSystemImplementation.h"
+#include <algorithm>
 
-const std::vector<float>& DataSystem::getData(Data dataHandle) const
+void DataSystem::addPoint(DataComponent& component, const float dataPoint)
 {
-	return components[static_cast<int>(dataHandle)].points;
+	Data::System::getData(component).push_back(dataPoint);
 }
 
-void DataSystem::addPoint(Data dataHandle, const float dataPoint)
+void DataSystem::clear(DataComponent& component)
 {
-	components[static_cast<int>(dataHandle)].points.push_back(dataPoint);
+	Data::System::getData(component) = { 0.5f };
 }
 
-void DataSystem::clear(Data dataHandle)
+void DataSystem::reserveAdditional(DataComponent& component, const size_t extraCapacity)
 {
-	components[static_cast<int>(dataHandle)].points = { 0.5f };
-}
-
-void DataSystem::reserveAdditional(Data dataHandle, const size_t extraCapacity)
-{
-	DataComponent& component = components[static_cast<int>(dataHandle)];
-	component.points.reserve(component.points.capacity() + (extraCapacity * sizeof(float)));
-}
-
-void DataSystem::reset()
-{
-	const auto reset_points = [](DataComponent& component) { component.points = { 0.5f }; };
-	std::for_each(begin(components), end(components), reset_points);
+	Data::System::getData(component).reserve(Data::System::getData(component).capacity() + (extraCapacity * sizeof(float)));
 }

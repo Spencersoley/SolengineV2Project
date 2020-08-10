@@ -3,6 +3,6 @@
 
 class DataComponent
 {
-	friend class DataSystem;
+	template <typename T> friend class DataSystemInterface;
 	std::vector<float> points{ 0.5f };
 };

@@ -1,9 +1,13 @@
 #include "BeingManager.h"
 #include "SelectionBox.h"
-#include "SelectableSystem.h"
-#include "TransformSystem.h"
+#include "SelectedTracker.h"
 
-void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& beings)
+#include "SelectableSystemImplementation.h"
+#include "TransformSystemImplementation.h"
+
+using Handle = unsigned int;
+
+void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& beings, SelectedTracker& selected) const
 {
 	float selectionProximity = FLT_MAX;
 	Handle tempSelected{ UINT_MAX };
@@ -11,8 +15,8 @@ void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& 
 	size_t beingsSize = beings.pool.size();
 	for (Handle beingHandle = 0; beingHandle < beingsSize; ++beingHandle)
 	{
-		const glm::vec2& beingPos = transformSystem.getPos(beings.pool[beingHandle].transform);
-		const glm::vec2& beingDims = transformSystem.getDims(beings.pool[beingHandle].transform);
+		const glm::vec2& beingPos = Transform::System::getPos(beings.pool[beingHandle].transform);
+		const glm::vec2& beingDims = Transform::System::getDims(beings.pool[beingHandle].transform);
 		const float xRadius = beingDims.x / 2.0f;
 		const float yRadius = beingDims.y / 2.0f;
 
@@ -31,18 +35,24 @@ void SelectableSystem::processClick(const glm::vec2& mouseCoords, BeingManager& 
 			}
 		}
 	}
-	
-	selectedHandle = tempSelected;
+
+	Selectable::System::setHandle(selected.component, tempSelected);
 }
 
-void SelectableSystem::update(const BeingManager& beings, SelectionBox& selectionBox) const
+void SelectableSystem::update(const BeingManager& beings, SelectionBox& selectionBox, SelectedTracker& selected) const
 {
+	Handle selectedHandle = Selectable::System::getHandle(selected.component);
 	if (selectedHandle < beings.getSize()) // is valid handle
 	{
-		transformSystem.setPos(selectionBox.transform, transformSystem.getPos(beings.pool[selectedHandle].transform));
+		Transform::System::setPos(selectionBox.transform, Transform::System::getPos(beings.pool[selectedHandle].transform));
 	}
-	else //invalid handle
+	else //if invalid handle
 	{
-		transformSystem.setPos(selectionBox.transform, glm::vec2(FLT_MAX));
+		Transform::System::setPos(selectionBox.transform, glm::vec2(FLT_MAX));
 	}
+}
+
+void SelectableSystem::clearSelectedHandle(SelectedComponent& component) const
+{
+	Selectable::System::setHandle(component, UINT_MAX); 
 }

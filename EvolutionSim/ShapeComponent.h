@@ -3,8 +3,7 @@
 
 class ShapeComponent
 {
-	friend class ShapeSystem;
-	friend struct SelectionBox;
+	template <class T> friend class ShapeSystemInterface;
 
-	SolengineV2::Square shape;
+	SolengineV2::Square square;
 };

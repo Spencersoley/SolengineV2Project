@@ -1,28 +1,23 @@
 #include "BeingManager.h"
-#include "TransformSystem.h"
-#include "VelocitySystem.h"
+#include "GenerationManager.h"
+
+#include "VelocitySystemImplementation.h"
+#include "TransformSystemImplementation.h"
+#include "GenerationSystemImplementation.h"
 
 constexpr float VELOCITY_MODIFIER = 0.000005f;
 
-void VelocitySystem::update(BeingManager& beings, unsigned int dt) const
+void VelocitySystem::update(BeingManager& beings, const GenerationManager& generationManager, unsigned int dt) const
 {
 	//likely a conversion warning: it's not an issue?
-	float adjustedDT = static_cast<int>(physicsSpeed) * dt * VELOCITY_MODIFIER;
+	float physicsSpeed = Generation::System::getPhysicsSpeed(generationManager.component);
+	float adjustedDT = physicsSpeed * dt * VELOCITY_MODIFIER;
 
-	const auto updatePosition = [&beings, adjustedDT, this](Being& being)
+	const auto updatePosition = [&beings, adjustedDT](Being& being)
 	{
-		transformSystem.translate(being.transform, (being.velocity.velocity * adjustedDT) * being.velocity.direction);
+		Transform::System::translate(being.transform, Velocity::System::getVelocity(being.velocity) * adjustedDT * Velocity::System::getDirection(being.velocity));
 	};
 
 	std::for_each(begin(beings.pool), end(beings.pool), updatePosition);
 }
 
-void VelocitySystem::setVelocity(VelocityComponent& component, const float set) const
-{ 
-	component.velocity = set; 
-}
-
-void VelocitySystem::setDirection(VelocityComponent& component, const glm::vec2& set) const
-{
-	component.direction = set;
-}

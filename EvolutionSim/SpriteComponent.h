@@ -4,8 +4,7 @@
 
 class SpriteComponent
 {
-	friend class SpriteSystem;
-	friend struct Being;
+	template <class T> friend class SpriteSystemInterface;
 
 	SolengineV2::Colour colour;
 	GLuint textureID{ 0 };

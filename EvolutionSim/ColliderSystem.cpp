@@ -1,30 +1,44 @@
-#include <glm\geometric.hpp>
-#include <glm\ext\vector_float2.hpp>
-
+#include <vector>
 #include "BeingManager.h"
-#include "SurvivalComponent.h"
-#include "ColliderSystem.h"
-#include "GeneSystem.h"
-#include "PartitionSystem.h"
-#include "SpriteSystem.h"
-#include "SurvivalSystem.h"
-#include "TextureSystem.h"
-#include "TransformSystem.h"
-#include "VelocitySystem.h"
+#include "GenerationManager.h"
 
+#include "ArenaSize.h"
+#include "GeneEnum.h"
+
+#include "ColliderSystemImplementation.h"
+#include "TextureLoaderSystemImplementation.h"
+#include "VelocitySystemImplementation.h"
+#include "PartitionSystemImplementation.h"
+#include "TransformSystemImplementation.h"
+#include "GeneSystemImplementation.h"
+#include "GenerationSystemImplementation.h"
+#include "SpriteSystemImplementation.h"
+#include "SurvivalSystemImplementation.h"
+
+const float FOOD_STRENGTH_MULTIPLIER{ 0.00001f };
+constexpr glm::vec2 EDGE_RIGHT_VEC2(0.01f, 0.0f);
+
+using SurvivalState = SurvivalComponent::SurvivalState;
+using Trait = Gene::Trait;
+using BeingType = Gene::BeingType;
 using Handle = unsigned int;
 using Cell = std::vector<Handle>;
 using Row = std::vector<Cell>;
 using Grid = std::vector<Row>;
-using CollisionType = ColliderSystem::CollisionType;
-using SurvivalState = SurvivalComponent::SurvivalState;
-using Trait = GeneComponent::Trait;
 
-void ColliderSystem::update(BeingManager& beings, unsigned int dt)
+enum class CollisionType
 {
-	float foodMultiplier = static_cast<float>(dt) * velocitySystem.getPhysicsSpeedVal() * FOOD_STRENGTH_MULTIPLIER;
+	ALIVE_ANIMAL_VS_ALIVE_ANIMAL = 1 << 1,
+	ALIVE_ANIMAL_VS_OTHER = 1 << 2,
+	OTHER_VS_ALIVE_ANIMAL = 1 << 3,
+	OTHER = 1 << 4
+};
 
-	const Grid beingGrid = partitionSystem.partitionBeingsToGrid(beings);
+void ColliderSystem::update(BeingManager& beings, PartitionComponent& partition, GenerationManager& generationManager, std::set<Handle>& handlesToDelete, unsigned int dt, TextureLibrary& textureLibrary)
+{
+	float foodMultiplier = static_cast<float>(dt) * Generation::System::getPhysicsSpeed(generationManager.component) * FOOD_STRENGTH_MULTIPLIER;
+
+	const Grid& beingGrid = Partition::System::getGrid(partition);
 	for (size_t i = 0; i < CELL_COUNT; i++) // map of possible x coords
 	{
 		for (size_t j = 0; j < CELL_COUNT; j++) // map of possible x coords
@@ -37,7 +51,7 @@ void ColliderSystem::update(BeingManager& beings, unsigned int dt)
 				{
 					if (l != k)
 					{
-						detectCollision(beings.pool[cell[k]], beings.pool[cell[l]], cell[k], cell[l], foodMultiplier);
+						detectCollision(beings.pool[cell[k]], beings.pool[cell[l]], cell[k], cell[l], foodMultiplier, handlesToDelete, textureLibrary);
 					}
 				}
 
@@ -47,7 +61,7 @@ void ColliderSystem::update(BeingManager& beings, unsigned int dt)
 					const size_t nwCellSize = nwCell.size();
 					for (size_t l = 0; l < nwCellSize; l++)
 					{
-						detectCollision(beings.pool[cell[k]], beings.pool[nwCell[l]], cell[k], nwCell[l], foodMultiplier);
+						detectCollision(beings.pool[cell[k]], beings.pool[nwCell[l]], cell[k], nwCell[l], foodMultiplier, handlesToDelete, textureLibrary);
 					}
 				}
 
@@ -57,7 +71,7 @@ void ColliderSystem::update(BeingManager& beings, unsigned int dt)
 					const size_t nCellSize = nCell.size();
 					for (size_t l = 0; l < nCellSize; l++)
 					{
-						detectCollision(beings.pool[cell[k]], beings.pool[nCell[l]], cell[k], nCell[l], foodMultiplier);
+						detectCollision(beings.pool[cell[k]], beings.pool[nCell[l]], cell[k], nCell[l], foodMultiplier, handlesToDelete, textureLibrary);
 					}
 				}
 
@@ -67,7 +81,7 @@ void ColliderSystem::update(BeingManager& beings, unsigned int dt)
 					const size_t wCellSize = wCell.size();
 					for (size_t l = 0; l < wCellSize; l++)
 					{
-						detectCollision(beings.pool[cell[k]], beings.pool[wCell[l]], cell[k], wCell[l], foodMultiplier);
+						detectCollision(beings.pool[cell[k]], beings.pool[wCell[l]], cell[k], wCell[l], foodMultiplier, handlesToDelete, textureLibrary);
 					}
 				}
 			}
@@ -75,32 +89,25 @@ void ColliderSystem::update(BeingManager& beings, unsigned int dt)
 	}
 }
 
-std::set<Handle>& ColliderSystem::getToDelete(const BeingManager& beings)
-{
-	return toDelete;
-}
-
-constexpr glm::vec2 EDGE_RIGHT_VEC2(0.01f, 0.0f);
-
-void ColliderSystem::detectCollision(Being& beingA, Being& beingB, const Handle handleA, const Handle handleB, const float foodMultiplier)
+void ColliderSystem::detectCollision(Being& beingA, Being& beingB, const Handle handleA, const Handle handleB, const float foodMultiplier, std::set<Handle>& handlesToDelete, TextureLibrary& textureLibrary)
 {
 	// collision check
 	TransformComponent& transformA = beingA.transform;
-	const glm::vec2& posA = transformSystem.getPos(transformA);
-	const glm::vec2& dimsA = transformSystem.getDims(transformA);
+	const glm::vec2& posA = Transform::System::getPos(transformA);
+	const glm::vec2& dimsA = Transform::System::getDims(transformA);
 	TransformComponent& transformB = beingB.transform;
-	const glm::vec2& posB = transformSystem.getPos(transformB);
-	const glm::vec2& dimsB = transformSystem.getDims(transformB);
+	const glm::vec2& posB = Transform::System::getPos(transformB);
+	const glm::vec2& dimsB = Transform::System::getDims(transformB);
 
 	glm::vec2 distVec = { posA.x - posB.x, posA.y - posB.y };
 	float distance = glm::length(distVec);
 	float collisionDepth = ((dimsA.x + dimsA.y + dimsB.x + dimsB.y) / 4.0f) - distance;
 
-	if (collisionDepth > 0) 
+	if (collisionDepth > 0)
 	{
 		// collision type
-		bool AisAlive = survivalSystem.getIsAlive(beingA.survival);
-		bool BisAlive = survivalSystem.getIsAlive(beingB.survival);
+		bool AisAlive = Survival::System::getIsAlive(beingA.survival);
+		bool BisAlive = Survival::System::getIsAlive(beingB.survival);
 		CollisionType collisionType{ CollisionType::OTHER };
 		if (AisAlive && BisAlive) //alive meat vs alive meat
 		{
@@ -123,106 +130,106 @@ void ColliderSystem::detectCollision(Being& beingA, Being& beingB, const Handle 
 		{
 			if (!distance)
 			{
-				transformSystem.translate(transformA, EDGE_RIGHT_VEC2);
+				Transform::System::translate(transformA, EDGE_RIGHT_VEC2);
 			}
 			else
 			{
 				glm::vec2 collisionDepthVec(glm::normalize(distVec) * collisionDepth * 0.5f);
 				// TRANSFORM BASED ON STRENGTH
-				if (survivalSystem.getSurvivalState(beingA.survival) == SurvivalState::AWAITING ||
-					survivalSystem.getSurvivalState(beingB.survival) == SurvivalState::AWAITING)
+				if (Survival::System::getSurvivalState(beingA.survival) == SurvivalState::AWAITING ||
+					Survival::System::getSurvivalState(beingB.survival) == SurvivalState::AWAITING)
 				{
-					transformSystem.translate(transformA, collisionDepthVec);
-					transformSystem.translate(transformB, -collisionDepthVec);
+					Transform::System::translate(transformA, collisionDepthVec);
+					Transform::System::translate(transformB, -collisionDepthVec);
 				}
 
-				float strengthA = geneSystem.getTrait(beingA.gene, Trait::STRENGTH);
-				float strengthB = geneSystem.getTrait(beingB.gene, Trait::STRENGTH);
+				float strengthA = Gene::System::getTrait(beingA.gene, Trait::STRENGTH);
+				float strengthB = Gene::System::getTrait(beingB.gene, Trait::STRENGTH);
 
 				if (strengthA - 0.05f > strengthB)
 				{
-					transformSystem.translate(transformB, -2.0f * collisionDepthVec);
+					Transform::System::translate(transformB, -2.0f * collisionDepthVec);
 
 				}
 				else if (strengthB - 0.05f > strengthA)
 				{
-					transformSystem.translate(transformA, 2.0f * collisionDepthVec);
+					Transform::System::translate(transformA, 2.0f * collisionDepthVec);
 				}
 				else
 				{
-					transformSystem.translate(transformA, collisionDepthVec);
-					transformSystem.translate(transformB, -collisionDepthVec);
+					Transform::System::translate(transformA, collisionDepthVec);
+					Transform::System::translate(transformB, -collisionDepthVec);
 				}
 			}
 			break;
 		}
 		case CollisionType::ALIVE_ANIMAL_VS_OTHER:
 		{
-			eatOnCollision(foodMultiplier, beingA, beingB, handleB);
+			eatOnCollision(foodMultiplier, beingA, beingB, handleB, handlesToDelete, textureLibrary);
 			break;
 		}
 		case CollisionType::OTHER_VS_ALIVE_ANIMAL:
 		{
-			eatOnCollision(foodMultiplier, beingB, beingA, handleA);
+			eatOnCollision(foodMultiplier, beingB, beingA, handleA, handlesToDelete, textureLibrary);
 			break;
 		}
 		}
 	}
 }
 
-void ColliderSystem::eatOnCollision(float foodMultiplier, Being& beingA, Being& beingB, const Handle handleB)
+void ColliderSystem::eatOnCollision(float foodMultiplier, Being& beingA, Being& beingB, const Handle handleB, std::set<Handle>& handlesToDelete, TextureLibrary& textureLibrary)
 {
-	if (survivalSystem.getSurvivalState(beingA.survival) == SurvivalState::SEARCHING)
+	if (Survival::System::getSurvivalState(beingA.survival) == SurvivalState::SEARCHING)
 	{
 		// evaluate eat interaction through modification algorithm [could elaborate here]
-		const float maxFullness = geneSystem.getTrait(beingA.gene, GeneComponent::Trait::HUNGER) * 1000.0f;
-		const float maxFoodConsumable = maxFullness - survivalSystem.getBeingFullness(beingA.survival);
-		const float maxFoodDepletable = survivalSystem.getBeingFullness(beingB.survival);
-		const float dietType = geneSystem.getTrait(beingA.gene, Trait::DIET);
-		float dietaryBonus = geneSystem.getBeingType(beingA.gene) == BeingType::PLANT ? pow((1.0f - dietType), 2) : pow(dietType, 2);
+		const float maxFullness = Gene::System::getTrait(beingA.gene, Gene::Trait::HUNGER) * 1000.0f;
+		const float maxFoodConsumable = maxFullness - Survival::System::getFullness(beingA.survival);
+		const float maxFoodDepletable = Survival::System::getFullness(beingB.survival);
+		const float dietType = Gene::System::getTrait(beingA.gene, Trait::DIET);
+		float dietaryBonus = Gene::System::getBeingType(beingA.gene) == BeingType::PLANT ? pow((1.0f - dietType), 2) : pow(dietType, 2);
 		float modify = std::min(foodMultiplier * dietaryBonus, maxFoodConsumable);
 		modify = std::min(modify, maxFoodDepletable);
-		survivalSystem.setFullness(beingA.survival, survivalSystem.getBeingFullness(beingA.survival) + modify);
-		survivalSystem.setFullness(beingB.survival, survivalSystem.getBeingFullness(beingB.survival) - modify);
+		Survival::System::setFullness(beingA.survival, Survival::System::getFullness(beingA.survival) + modify);
+		Survival::System::setFullness(beingB.survival, Survival::System::getFullness(beingB.survival) - modify);
 
-		if (survivalSystem.getBeingFullness(beingB.survival) <= 0)
+		if (Survival::System::getFullness(beingB.survival) <= 0)
 		{
-			toDelete.insert(handleB);
+			handlesToDelete.insert(handleB);
 		}
 
-		float fullness = survivalSystem.getBeingFullness(beingA.survival) / maxFullness;
+		float fullness = Survival::System::getFullness(beingA.survival) / maxFullness;
 		if (fullness >= 1.0f)
 		{
-			survivalSystem.setSurvivalState(beingA.survival, SurvivalState::RETURNING); // completely full
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_8));
+			Survival::System::setSurvivalState(beingA.survival, SurvivalState::RETURNING); // completely full
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_8, textureLibrary));
 		}
 		else if (fullness >= 0.87f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_7));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_7, textureLibrary));
 		}
 		else if (fullness >= 0.74f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_6));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_6, textureLibrary));
 		}
 		else if (fullness >= 0.61f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_5));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_5, textureLibrary));
 		}
 		else if (fullness >= 0.48f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_4));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_4, textureLibrary));
 		}
 		else if (fullness >= 0.35f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_3));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_3, textureLibrary));
 		}
 		else if (fullness >= 0.22f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_2));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_2, textureLibrary));
 		}
 		else if (fullness >= 0.10f)
 		{
-			spriteSystem.setTextureID(beingA.sprite, textureSystem.getTextureID(TextureSystem::Component::BEING_1));
+			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_1, textureLibrary));
 		}
 	}
 }

@@ -1,14 +1,11 @@
 #pragma once
 #include <glm\ext\matrix_float4x4.hpp>
 
-constexpr float DEFAULT_CAMERA_ZOOM = 0.2f;
-
 class CameraComponent
 {
-	friend class CameraSystem;
-	friend struct Camera;
+	template <typename T> friend class CameraSystemInterface;
 
 	glm::mat4 projectionMatrix{ 0.0f };
-	float scale{ DEFAULT_CAMERA_ZOOM };
+	float scale{ 0.2f };
 	bool hasMoved = true;
 };

@@ -1,5 +1,8 @@
 #pragma once
 #include <SDL/SDL.h>
+#include <vector>
+#include <GL/glew.h>
+#include <glm\ext\vector_float2.hpp>
 
 namespace SolengineV2
 {
@@ -30,7 +33,7 @@ namespace SolengineV2
 	class GeometryRenderer
 	{
 	public:
-		void draw(const GLuint programID, const Square& square, const glm::vec2& pos, const glm::vec2& dims) const
+		static void draw(const GLuint programID, const Square& square, const glm::vec2& pos, const glm::vec2& dims) 
 		{
 			glBindVertexArray(0);
 			glUseProgram(programID);
@@ -57,7 +60,7 @@ namespace SolengineV2
 			glDrawElements(GL_LINE_LOOP, square.indices.size(), GL_UNSIGNED_INT, 0);
 		}
 				
-		void draw(const glm::vec2& pos, const glm::vec2& dims, unsigned int numberOfSegments) const
+		static void draw(const glm::vec2& pos, const glm::vec2& dims, unsigned int numberOfSegments) 
 		{
 			glBegin(GL_LINE_LOOP);
 			for (unsigned int ii = 0; ii < numberOfSegments; ii++) 

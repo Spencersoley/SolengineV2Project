@@ -2,7 +2,7 @@
 #include "CameraComponent.h"
 #include "TransformComponent.h"
 
-struct Camera
+struct CameraManager
 {
 	TransformComponent transform;
 	CameraComponent cam;

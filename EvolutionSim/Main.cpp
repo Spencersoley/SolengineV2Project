@@ -2,40 +2,45 @@
 #include <SDL/SDL.h>
 #include <GL/glew.h>
 #include <set>
+#include <IMGUI\imgui.h>
 
 #include <ImageLoader.h>
 #include <ShaderCreator.h>
 #include <ShaderManager.h>
 #include <Window.h>
 #include <TimeManager.h>
-#include <InputManager.h>
 #include <SDLInit.h>
-#include <GeometryRenderer.h>
+#include <GameState.h>
 
-#include "BeingManager.h"
-#include "BackgroundImage.h"
-#include "Camera.h"
-#include "SelectionBox.h"
-
-#include "CameraSystem.h"
-#include "ColliderSystem.h"
-#include "DataSystem.h"
-#include "GeneSystem.h"
-#include "GenerationSystem.h"
-#include "GUISystem.h"
-#include "OverlaySystem.h"
-#include "PartitionSystem.h"
-#include "SelectableSystem.h"
-#include "ShapeSystem.h"
-#include "SpriteSystem.h"
-#include "SurvivalSystem.h"
-#include "TransformSystem.h"
-#include "UserInputSystem.h"
-#include "VelocitySystem.h"
-
-#include "Sceensize.h"
 #include "ArenaSize.h"
-#include "TextureSystem.h"
+#include "BeingManager.h"
+#include "DataPointManager.h"
+#include "BackgroundImage.h"
+#include "CameraManager.h"
+#include "SelectionBox.h"
+#include "GenerationManager.h"
+#include "OverlayConfig.h"
+#include "SelectedTracker.h"
+#include "Sceensize.h"
+#include "SpatialPartition.h"
+#include "TextureLibrary.h"
+
+#include "CameraSystemImplementation.h"
+#include "ColliderSystemImplementation.h"
+#include "DataSystemImplementation.h"
+#include "GenerationSystemImplementation.h"
+#include "GUISystemImplementation.h"
+#include "PartitionSystemImplementation.h"
+#include "SelectableSystemImplementation.h"
+#include "ShapeSystemImplementation.h"
+#include "TransformSystemImplementation.h"
+#include "SpriteSystemImplementation.h"
+#include "SurvivalSystemImplementation.h"
+#include "UserInputSystemImplementation.h"	
+#include "VelocitySystemImplementation.h"
+
+#include "OverlaySystemInterface.h"	
+#include "TextureLoaderSystemImplementation.h"
 
 /////////////////// TODO: FEATURES //////////////////
 
@@ -74,12 +79,6 @@
 ///////////////// TODO: OPTIMISATION ///////////////
 // - figure out a system to squash data 
 
-template <typename E>
-constexpr auto to_underlying(E e) noexcept
-{
-	return static_cast<std::underlying_type_t<E>>(e);
-}
-
 int main(int argc, char** argv)
 {
 	SolengineV2::initialiseSDL();
@@ -92,158 +91,82 @@ int main(int argc, char** argv)
 
 	SolengineV2::Window            window("SolengineV2", SCREEN_WIDTH, SCREEN_HEIGHT, SolengineV2::Colour(0, 0, 0, 255));
 	SolengineV2::ShaderManager     shaderManager;
-	SolengineV2::GeometryRenderer  renderer;
 	SolengineV2::TimeManager       timeManager(100000, SolengineV2::TimerMode::LIFETIME_AVERAGE);
 	SolengineV2::InputManager      inputManager;
-	
-	TextureSystem textureSystem;
+
+	SolengineV2::SpriteBatch       spriteBatch;
+
+	TextureLibrary textureLibrary;
 
 	{
 		SolengineV2::IOManager         ioManager;
 		SolengineV2::ShaderCreator     shaderCreator(ioManager);
 		shaderCreator.createShader(shaders.colourShading, "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
 		shaderCreator.createShader(shaders.simpleGeometry, "Shaders/simpleGeometry.vert", "Shaders/simpleGeometry.frag", { "aPos" });
-		textureSystem.init(ioManager);
+		TextureLoader::System::loadTextures(ioManager, textureLibrary);
 	}
 
-	//Systems
-	TransformSystem transformSystem;
-	DataSystem dataSystem;
-
-	PartitionSystem partitionSystem(
-		transformSystem
-	);
-
-	VelocitySystem velocitySystem(
-		transformSystem
-	);
-
-	CameraSystem cameraSystem(
-		transformSystem
-	);
-
-	GeneSystem geneSystem;
-
-	SelectableSystem selectableSystem(
-		transformSystem
-	);
-
-	SpriteSystem spriteSystem(
-		shaderManager, 
-		shaders.colourShading, 
-		cameraSystem, 
-		transformSystem
-	);
-
-	SurvivalSystem survivalSystem(
-		textureSystem, 
-		transformSystem, 
-		velocitySystem, 
-		geneSystem, 
-		spriteSystem
-	);
-
-	ColliderSystem colliderSystem(
-		geneSystem,
-		partitionSystem,
-		spriteSystem,
-		survivalSystem,
-		textureSystem, 
-		transformSystem,
-		velocitySystem
-	);
-
-	ShapeSystem shapeSystem(
-		renderer, 
-		shaderManager, 
-		shaders.simpleGeometry, 
-		transformSystem, 
-		cameraSystem, 
-		selectableSystem
-	);
-
-	OverlaySystem overlaySystem(
-		spriteSystem, 
-		geneSystem, 
-		survivalSystem
-	);
-
-	GenerationSystem generationSystem(
-		colliderSystem,
-		dataSystem,
-		geneSystem,
-		overlaySystem,
-		selectableSystem,
-		spriteSystem,
-		survivalSystem,
-		textureSystem,
-		transformSystem
-	);
-
-	UserInputSystem userInputSystem(
-		inputManager, 
-		transformSystem, 
-		cameraSystem, 
-		selectableSystem
-	);
-
-	GUISystem guiSystem(
-		window, 
-		textureSystem, 
-		velocitySystem, 
-		generationSystem,
-		dataSystem,
-		overlaySystem, 
-		geneSystem, 
-		selectableSystem, 
-		survivalSystem
-	);
+	GUI::System::init(window);
 
 	SolengineV2::GameState gameState{ SolengineV2::GameState::PLAY };
 
 	//Entities
-	BeingManager     beingManager(geneSystem, spriteSystem, velocitySystem, survivalSystem, transformSystem);
+	BeingManager      beingManager;
+	DataPointManager  dataPointManager;
+	GenerationManager generationManager;
 
-	SelectionBox     selectionBox; 
-	transformSystem.setPos(selectionBox.transform, glm::vec2(FLT_MAX));
-	transformSystem.setDims(selectionBox.transform, glm::vec2(25.0f));
+	OverlayConfig     overlayConfig;
 
-	Camera           camera;
-	transformSystem.setPos(camera.transform, { -300.0f, 0.0f });
-	transformSystem.setDims(camera.transform, { 0.0f, 0.0f });
+	const int INITIAL_FOOD_COUNT = 25;
+	Generation::System::setFoodPerGeneration(generationManager.component, INITIAL_FOOD_COUNT);
+
+	SelectionBox     selectionBox;
+	Transform::System::setPos(selectionBox.transform, glm::vec2(FLT_MAX));
+	Transform::System::setDims(selectionBox.transform, glm::vec2(25.0f));
+
+	CameraManager           camera;
+	Transform::System::setPos(camera.transform, { -300.0f, 0.0f });
+	Transform::System::setDims(camera.transform, { 0.0f, 0.0f });
 
 	BackgroundImage  backgroundImage;
-	transformSystem.setPos(backgroundImage.transform, { 0.0f, 0.0f });
-	transformSystem.setDims(backgroundImage.transform, { ARENA_SIZE, ARENA_SIZE });
-	spriteSystem.setColour(backgroundImage.sprite, { 255, 255, 255, 255 });
-	spriteSystem.setTextureID(backgroundImage.sprite, textureSystem.getTextureID(TextureSystem::Component::BACKGROUND));
+	Transform::System::setPos(backgroundImage.transform, { 0.0f, 0.0f });
+	Transform::System::setDims(backgroundImage.transform, { ARENA_SIZE, ARENA_SIZE });
+	Sprite::System::setColour(backgroundImage.sprite, { 255, 255, 255, 255 });
+	Sprite::System::setTextureID(backgroundImage.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BACKGROUND, textureLibrary));
 
+	SelectedTracker selectedTracker;
+
+	SpatialPartition spatialPartition;
+	Partition::System::setupGrid(spatialPartition.partition);
+
+	ImGuiIO io{ ImGui::GetIO() };
+	
 	// seed random number generation
 	srand((unsigned int)time(0));
 
-	generationSystem.begin(beingManager);
+	std::set<Handle> handlesToDelete{}; //delete message 
+
+	Generation::System::begin(beingManager, generationManager, selectedTracker, textureLibrary);
 
 	while (gameState == SolengineV2::GameState::PLAY || gameState == SolengineV2::GameState::PAUSE)
 	{
 		unsigned int deltaTime = timeManager.getDeltaTime();
-
-		userInputSystem.update(deltaTime, beingManager, camera, gameState);
+		UserInput::System::update(inputManager, deltaTime, beingManager, camera, selectedTracker, gameState);
 
 		if (gameState != SolengineV2::GameState::PAUSE)
 		{
-			colliderSystem.update(beingManager, deltaTime);
-			generationSystem.update(beingManager);
-			survivalSystem.update(beingManager, deltaTime);
-			velocitySystem.update(beingManager, deltaTime);
-
-			selectableSystem.update(beingManager, selectionBox);
+			Partition::System::update(beingManager, spatialPartition.partition);
+			Collider::System::update(beingManager, spatialPartition.partition, generationManager, handlesToDelete, deltaTime, textureLibrary);
+			Generation::System::update(beingManager, dataPointManager, generationManager, overlayConfig, selectedTracker, textureLibrary, handlesToDelete);
+			Survival::System::update(beingManager, deltaTime, generationManager, textureLibrary);
+			Velocity::System::update(beingManager, generationManager, deltaTime);
+			Selectable::System::update(beingManager, selectionBox, selectedTracker);
 		}
 
 		window.Clear();
-		spriteSystem.update(beingManager, backgroundImage, camera);
-		shapeSystem.update(selectionBox, camera);
-
-		guiSystem.update(beingManager, gameState, deltaTime);
+		Sprite::System::update(beingManager, backgroundImage, camera, spriteBatch, shaders.colourShading);
+		Shape::System::update(selectionBox, camera, shaders.simpleGeometry);
+		GUI::System::update(beingManager, dataPointManager, generationManager, overlayConfig, selectedTracker, textureLibrary, window, gameState, deltaTime);
 
 		window.SwapBuffer();
 		timeManager.limitFPS();

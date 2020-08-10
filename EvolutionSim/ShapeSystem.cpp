@@ -1,18 +1,20 @@
-#include "ShaderManager.h"
-#include "GeometryRenderer.h"
-#include "SelectionBox.h"
-#include "Camera.h"
-#include "CameraSystem.h"
-#include "ShapeSystem.h"
-#include "TransformSystem.h"
+#include <GeometryRenderer.h>
+#include <ShaderManager.h>
 
-void ShapeSystem::update(const SelectionBox& selectionBox, const Camera& camera) const
+#include "SelectionBox.h"
+#include "CameraManager.h"
+
+#include "ShapeSystemImplementation.h"
+#include "CameraSystemImplementation.h"
+#include "TransformSystemImplementation.h"
+
+void ShapeSystem::update(const SelectionBox& selectionBox, const CameraManager& camera, const SolengineV2::ShaderProgram& shaderProgram) const
 {
-	shaderManager.use(shader, nullptr);
-	shaderManager.setProjectionMatrix(shader, cameraSystem.getProjectionMatrix(camera.cam));
-	if (transformSystem.getPos(selectionBox.transform).x < FLT_MAX)
+	SolengineV2::ShaderManager::use(shaderProgram, nullptr);
+	SolengineV2::ShaderManager::setProjectionMatrix(shaderProgram, Camera::System::getProjectionMatrix(camera.cam));
+	if (Transform::System::getPos(selectionBox.transform).x < FLT_MAX)
 	{
-		renderer.draw(shader.programID, selectionBox.shape.shape, transformSystem.getPos(selectionBox.transform), transformSystem.getDims(selectionBox.transform));
+		SolengineV2::GeometryRenderer::draw(shaderProgram.programID, Shape::System::getShape(selectionBox.shape), Transform::System::getPos(selectionBox.transform), Transform::System::getDims(selectionBox.transform));
 	}
-	shaderManager.unuse(shader);
+	SolengineV2::ShaderManager::unuse(shaderProgram);
 }

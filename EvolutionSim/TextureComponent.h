@@ -1,6 +1,9 @@
+#pragma once
 #include <Texture.h>
 
-struct TextureComponent
+class TextureComponent
 {
+private:
+	template <class T> friend class TextureLoaderSystemInterface;
 	SolengineV2::Texture data;
 };
