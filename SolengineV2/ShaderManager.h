@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "IOManager.h"
+#include <glm\ext\matrix_float4x4.hpp>
 #include "ShaderProgram.h"
 
 namespace SolengineV2

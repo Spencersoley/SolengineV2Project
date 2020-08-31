@@ -81,5 +81,8 @@
     <ClInclude Include="ShaderCreator.h">
       <Filter>Source Files\Core\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="RandomNumberGenerator.h">
+      <Filter>Source Files\Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

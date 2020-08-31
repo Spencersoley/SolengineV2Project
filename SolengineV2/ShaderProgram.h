@@ -1,12 +1,5 @@
 #pragma once
-#include <string>
 #include <GL/glew.h>
-#include <vector>
-#include <fstream>
-
-#include "IOManager.h"
-#include <glm\ext\matrix_float4x4.hpp>
-#include <map>
 
 namespace SolengineV2
 {

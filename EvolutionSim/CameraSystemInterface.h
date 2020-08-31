@@ -1,5 +1,7 @@
 #pragma once
 #include "CameraComponent.h"
+#include <glm\ext\vector_float2.hpp>
+struct GameData;
 
 template <class Implementation>
 class CameraSystemInterface
@@ -13,22 +15,21 @@ public:
 	static void setProjectionMatrix(CameraComponent& component, const glm::mat4& set) { component.projectionMatrix = set; }
 	static void setHasMoved(CameraComponent& component, const bool set) { component.hasMoved = set; }
 
-	static void updateCameraMatrices(CameraComponent& component, const TransformComponent& cameraTransform)  
-	{
-		static Implementation system;
-		system.updateCameraMatrices(component, cameraTransform);
-	}
-
 	static void zoom(CameraComponent& component, float zoom)
 	{
 		static Implementation system;
 		system.zoom(component, zoom);
 	}
 
-	static glm::vec2 convertScreenToWorld(const CameraComponent& cameraComponent, const TransformComponent& transformComponent, const glm::vec2 screenCoords)
+	static void updateCameraMatrices(GameData& gameData)  
 	{
 		static Implementation system;
-		return system.convertScreenToWorld(cameraComponent, transformComponent, screenCoords);
+		system.updateCameraMatrices(gameData);
+	}
+
+	static glm::vec2 convertScreenToWorld(const GameData& gameData, const glm::ivec2 screenCoords)
+	{
+		static Implementation system;
+		return system.convertScreenToWorld(gameData, screenCoords);
 	}
 };
-

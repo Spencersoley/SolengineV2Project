@@ -21,16 +21,22 @@ namespace SolengineV2
 
 		uint32_t microsPerFrame[SAMPLES]{};
 		uint32_t frameCount{ 0 };
-		TimerMode mode;
+		TimerMode mode{ TimerMode::NONE };
 
 
 	public:
-		TimeManager(uint32_t maxFPS, TimerMode timerMode) : mode(timerMode)
+		TimeManager(uint32_t maxFPS, TimerMode timerMode) 
 		{
+			Init(maxFPS, timerMode);
+		}
+		TimeManager() {};
+
+		void Init(uint32_t maxFPS, TimerMode timerMode)
+		{
+			mode = timerMode;
 			desiredTicksPerFrame = std::chrono::milliseconds(1000 / maxFPS);
 			previousStartTime = std::chrono::high_resolution_clock::now();
 			endTime = std::chrono::high_resolution_clock::now();
-
 		}
 
 		void limitFPS()
@@ -60,10 +66,11 @@ namespace SolengineV2
 		}
 
 		//returns change in time in microseconds
-		uint32_t getDeltaTime()
+		template <class T>
+		auto getDeltaTime()
 		{
 			startTime = now();
-			uint32_t microseconds = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::microseconds>(startTime - previousStartTime).count());
+		    auto microseconds = std::chrono::duration_cast<T>(startTime - previousStartTime);
 			previousStartTime = startTime;
 			return microseconds;
 		}

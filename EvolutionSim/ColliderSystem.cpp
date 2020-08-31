@@ -1,101 +1,27 @@
 #include <vector>
-#include "BeingManager.h"
-#include "GenerationManager.h"
+#include "GameData.h"
+#include "Math.h"
+#include "Grid.h"
+#include "ColliderSystemSpecialization.h"
+#include "PartitionSystemSpecialization.h"
+#include "TransformSystemSpecialization.h"
+#include "SurvivalSystemSpecialization.h"
+#include "AggressionTraitSystemSpecialization.h"
+#include "HungerTraitSystemSpecialization.h"
+#include "StrengthTraitSystemSpecialization.h"
 
-#include "ArenaSize.h"
-#include "GeneEnum.h"
-
-#include "ColliderSystemImplementation.h"
-#include "TextureLoaderSystemImplementation.h"
-#include "VelocitySystemImplementation.h"
-#include "PartitionSystemImplementation.h"
-#include "TransformSystemImplementation.h"
-#include "GeneSystemImplementation.h"
-#include "GenerationSystemImplementation.h"
-#include "SpriteSystemImplementation.h"
-#include "SurvivalSystemImplementation.h"
-
-const float FOOD_STRENGTH_MULTIPLIER{ 0.00001f };
 constexpr glm::vec2 EDGE_RIGHT_VEC2(0.01f, 0.0f);
 
 using SurvivalState = SurvivalComponent::SurvivalState;
-using Trait = Gene::Trait;
-using BeingType = Gene::BeingType;
-using Handle = unsigned int;
-using Cell = std::vector<Handle>;
-using Row = std::vector<Cell>;
-using Grid = std::vector<Row>;
 
-enum class CollisionType
+void animalOnAnimalCollision(Handle animalHandleA, Handle animalHandleB, float combatRateMultiplier, GameData& gameData)
 {
-	ALIVE_ANIMAL_VS_ALIVE_ANIMAL = 1 << 1,
-	ALIVE_ANIMAL_VS_OTHER = 1 << 2,
-	OTHER_VS_ALIVE_ANIMAL = 1 << 3,
-	OTHER = 1 << 4
-};
-
-void ColliderSystem::update(BeingManager& beings, PartitionComponent& partition, GenerationManager& generationManager, std::set<Handle>& handlesToDelete, unsigned int dt, TextureLibrary& textureLibrary)
-{
-	float foodMultiplier = static_cast<float>(dt) * Generation::System::getPhysicsSpeed(generationManager.component) * FOOD_STRENGTH_MULTIPLIER;
-
-	const Grid& beingGrid = Partition::System::getGrid(partition);
-	for (size_t i = 0; i < CELL_COUNT; i++) // map of possible x coords
-	{
-		for (size_t j = 0; j < CELL_COUNT; j++) // map of possible x coords
-		{
-			const Cell& cell = beingGrid[i][j];
-			const size_t cellSize = cell.size();
-			for (size_t k = 0; k < cellSize; k++) // map of y coord for each x coord
-			{
-				for (size_t l = 0; l < cellSize; l++)
-				{
-					if (l != k)
-					{
-						detectCollision(beings.pool[cell[k]], beings.pool[cell[l]], cell[k], cell[l], foodMultiplier, handlesToDelete, textureLibrary);
-					}
-				}
-
-				if (i > 0 && j > 0)
-				{
-					const Cell& nwCell = beingGrid[i - 1][j - 1];
-					const size_t nwCellSize = nwCell.size();
-					for (size_t l = 0; l < nwCellSize; l++)
-					{
-						detectCollision(beings.pool[cell[k]], beings.pool[nwCell[l]], cell[k], nwCell[l], foodMultiplier, handlesToDelete, textureLibrary);
-					}
-				}
-
-				if (i > 0)
-				{
-					const Cell& nCell = beingGrid[i - 1][j];
-					const size_t nCellSize = nCell.size();
-					for (size_t l = 0; l < nCellSize; l++)
-					{
-						detectCollision(beings.pool[cell[k]], beings.pool[nCell[l]], cell[k], nCell[l], foodMultiplier, handlesToDelete, textureLibrary);
-					}
-				}
-
-				if (j > 0)
-				{
-					const Cell& wCell = beingGrid[i][j - 1];
-					const size_t wCellSize = wCell.size();
-					for (size_t l = 0; l < wCellSize; l++)
-					{
-						detectCollision(beings.pool[cell[k]], beings.pool[wCell[l]], cell[k], wCell[l], foodMultiplier, handlesToDelete, textureLibrary);
-					}
-				}
-			}
-		}
-	}
-}
-
-void ColliderSystem::detectCollision(Being& beingA, Being& beingB, const Handle handleA, const Handle handleB, const float foodMultiplier, std::set<Handle>& handlesToDelete, TextureLibrary& textureLibrary)
-{
-	// collision check
-	TransformComponent& transformA = beingA.transform;
+	BeingEntity& animalA = gameData.beingManager.pool[animalHandleA];
+	TransformComponent& transformA = animalA.transform;
 	const glm::vec2& posA = Transform::System::getPos(transformA);
 	const glm::vec2& dimsA = Transform::System::getDims(transformA);
-	TransformComponent& transformB = beingB.transform;
+	BeingEntity& animalB = gameData.beingManager.pool[animalHandleB];
+	TransformComponent& transformB = animalB.transform;
 	const glm::vec2& posB = Transform::System::getPos(transformB);
 	const glm::vec2& dimsB = Transform::System::getDims(transformB);
 
@@ -105,131 +31,181 @@ void ColliderSystem::detectCollision(Being& beingA, Being& beingB, const Handle 
 
 	if (collisionDepth > 0)
 	{
-		// collision type
-		bool AisAlive = Survival::System::getIsAlive(beingA.survival);
-		bool BisAlive = Survival::System::getIsAlive(beingB.survival);
-		CollisionType collisionType{ CollisionType::OTHER };
-		if (AisAlive && BisAlive) //alive meat vs alive meat
-		{
-			collisionType = CollisionType::ALIVE_ANIMAL_VS_ALIVE_ANIMAL;
-		}
-		else if (AisAlive) //alive animal vs food
-		{
-			collisionType = CollisionType::ALIVE_ANIMAL_VS_OTHER;
+		SurvivalState survivalStateA = Survival::System::getSurvivalState(animalA.survival);
+		SurvivalState survivalStateB = Survival::System::getSurvivalState(animalB.survival);
 
-		}
-		else if (BisAlive) //food vs alive animal
+		if (!distance)
 		{
-			collisionType = CollisionType::OTHER_VS_ALIVE_ANIMAL;
+			Transform::System::translate(
+				transformA, 
+				EDGE_RIGHT_VEC2);
+		}
+		else
+		{
+			glm::vec2 collisionDepthVec(glm::normalize(distVec) * collisionDepth * 0.5f);
+			//StrengthTrait::System::resolveStrengthCollision(animalHandleA, animalHandleB, gameData, collisionDepthVec);
+			Transform::System::translate(
+				animalA.transform,
+				collisionDepthVec);
+			Transform::System::translate(
+				animalB.transform,
+				-collisionDepthVec);
 		}
 
-		// collision consequence
-		switch (collisionType)
+		if (survivalStateA == SurvivalState::SEARCHING && survivalStateB == SurvivalState::SEARCHING)
 		{
-		case CollisionType::ALIVE_ANIMAL_VS_ALIVE_ANIMAL:
-		{
-			if (!distance)
-			{
-				Transform::System::translate(transformA, EDGE_RIGHT_VEC2);
-			}
-			else
-			{
-				glm::vec2 collisionDepthVec(glm::normalize(distVec) * collisionDepth * 0.5f);
-				// TRANSFORM BASED ON STRENGTH
-				if (Survival::System::getSurvivalState(beingA.survival) == SurvivalState::AWAITING ||
-					Survival::System::getSurvivalState(beingB.survival) == SurvivalState::AWAITING)
-				{
-					Transform::System::translate(transformA, collisionDepthVec);
-					Transform::System::translate(transformB, -collisionDepthVec);
-				}
-
-				float strengthA = Gene::System::getTrait(beingA.gene, Trait::STRENGTH);
-				float strengthB = Gene::System::getTrait(beingB.gene, Trait::STRENGTH);
-
-				if (strengthA - 0.05f > strengthB)
-				{
-					Transform::System::translate(transformB, -2.0f * collisionDepthVec);
-
-				}
-				else if (strengthB - 0.05f > strengthA)
-				{
-					Transform::System::translate(transformA, 2.0f * collisionDepthVec);
-				}
-				else
-				{
-					Transform::System::translate(transformA, collisionDepthVec);
-					Transform::System::translate(transformB, -collisionDepthVec);
-				}
-			}
-			break;
-		}
-		case CollisionType::ALIVE_ANIMAL_VS_OTHER:
-		{
-			eatOnCollision(foodMultiplier, beingA, beingB, handleB, handlesToDelete, textureLibrary);
-			break;
-		}
-		case CollisionType::OTHER_VS_ALIVE_ANIMAL:
-		{
-			eatOnCollision(foodMultiplier, beingB, beingA, handleA, handlesToDelete, textureLibrary);
-			break;
-		}
+			AggressionTrait::System::resolveAggressionTest(animalHandleA, animalHandleB, combatRateMultiplier, gameData);
 		}
 	}
 }
 
-void ColliderSystem::eatOnCollision(float foodMultiplier, Being& beingA, Being& beingB, const Handle handleB, std::set<Handle>& handlesToDelete, TextureLibrary& textureLibrary)
+void animalOnFoodCollision(Handle animalHandle, Handle foodHandle, float foodMultiplier, GameData& gameData)
 {
-	if (Survival::System::getSurvivalState(beingA.survival) == SurvivalState::SEARCHING)
+	// collision check
+	TransformComponent& transformA = gameData.beingManager.pool[animalHandle].transform;
+	const glm::vec2& posA = Transform::System::getPos(transformA);
+	const glm::vec2& dimsA = Transform::System::getDims(transformA);
+	TransformComponent& transformB = gameData.foodManager.pool[foodHandle].transform;
+	const glm::vec2& posB = Transform::System::getPos(transformB);
+	const glm::vec2& dimsB = Transform::System::getDims(transformB);
+
+	glm::vec2 distVec = { posA.x - posB.x, posA.y - posB.y };
+	float distance = glm::length(distVec);
+	float collisionDepth = ((dimsA.x + dimsA.y + dimsB.x + dimsB.y) / 4.0f) - distance;
+
+	if (collisionDepth > 0)
 	{
-		// evaluate eat interaction through modification algorithm [could elaborate here]
-		const float maxFullness = Gene::System::getTrait(beingA.gene, Gene::Trait::HUNGER) * 1000.0f;
-		const float maxFoodConsumable = maxFullness - Survival::System::getFullness(beingA.survival);
-		const float maxFoodDepletable = Survival::System::getFullness(beingB.survival);
-		const float dietType = Gene::System::getTrait(beingA.gene, Trait::DIET);
-		float dietaryBonus = Gene::System::getBeingType(beingA.gene) == BeingType::PLANT ? pow((1.0f - dietType), 2) : pow(dietType, 2);
-		float modify = std::min(foodMultiplier * dietaryBonus, maxFoodConsumable);
-		modify = std::min(modify, maxFoodDepletable);
-		Survival::System::setFullness(beingA.survival, Survival::System::getFullness(beingA.survival) + modify);
-		Survival::System::setFullness(beingB.survival, Survival::System::getFullness(beingB.survival) - modify);
+		HungerTrait::System::eatOnCollision(foodMultiplier, animalHandle, foodHandle, gameData);
+	}
+}
 
-		if (Survival::System::getFullness(beingB.survival) <= 0)
-		{
-			handlesToDelete.insert(handleB);
-		}
+void ColliderSystem::update(const std::chrono::microseconds& dt, GameData& gameData)
+{
+	float timeRateModifier = static_cast<float>(dt.count());
+	float physicsRateModifier = gameData.configurableSettings.physicsSpeed.get();
+	float foodMultiplier = timeRateModifier * physicsRateModifier * gameData.configurableSettings.foodRateMultiplier.get();
+	float combatMultiplier = timeRateModifier * physicsRateModifier * gameData.configurableSettings.combatRateMultiplier.get();
 
-		float fullness = Survival::System::getFullness(beingA.survival) / maxFullness;
-		if (fullness >= 1.0f)
+	Grid& animalGrid = Partition::System::getAnimalGrid(gameData.spatialPartition.partition);
+	Grid& foodGrid = Partition::System::getFoodGrid(gameData.spatialPartition.partition);
+	std::vector<BeingEntity> animalPool = gameData.beingManager.pool;
+	std::vector<FoodEntity> foodPool = gameData.foodManager.pool;
+	size_t cellCount = Math::getNOfCellsPerRow(gameData.configurableSettings.arenaDiameter.get(), CELL_SIZE);
+	for (size_t i = 0; i < cellCount; i++) // map of possible x coords
+	{
+		for (size_t j = 0; j < cellCount; j++) // map of possible x coords
 		{
-			Survival::System::setSurvivalState(beingA.survival, SurvivalState::RETURNING); // completely full
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_8, textureLibrary));
-		}
-		else if (fullness >= 0.87f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_7, textureLibrary));
-		}
-		else if (fullness >= 0.74f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_6, textureLibrary));
-		}
-		else if (fullness >= 0.61f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_5, textureLibrary));
-		}
-		else if (fullness >= 0.48f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_4, textureLibrary));
-		}
-		else if (fullness >= 0.35f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_3, textureLibrary));
-		}
-		else if (fullness >= 0.22f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_2, textureLibrary));
-		}
-		else if (fullness >= 0.10f)
-		{
-			Sprite::System::setTextureID(beingA.sprite, TextureLoader::System::getTextureID(TextureLibrary::Texture::BEING_1, textureLibrary));
+			const Cell& cell = animalGrid[i][j];
+			const size_t cellSize = cell.size();
+			for (size_t k = 0; k < cellSize; k++) // map of y coord for each x coord
+			{
+				// same cell vs animal
+				for (size_t l = 0; l < cellSize; l++)
+				{
+					if (l != k)
+					{
+						animalOnAnimalCollision(cell[k], cell[l], combatMultiplier, gameData);
+					}
+				}
+				// same cell vs food
+				const Cell& foodCell = foodGrid[i][j];
+				for (size_t l = 0; l < foodCell.size(); l++)
+				{
+					animalOnFoodCollision(cell[k], foodCell[l], foodMultiplier, gameData);
+				}
+
+				if (i > 0 && j > 0) // nw cell
+				{
+					const Cell& nwAnimalCell = animalGrid[i - 1][j - 1];
+					const size_t nwAnimalCellSize = nwAnimalCell.size();
+					for (size_t l = 0; l < nwAnimalCellSize; l++)
+					{
+						animalOnAnimalCollision(cell[k], nwAnimalCell[l], combatMultiplier, gameData);
+					}
+
+					const Cell& nwFoodCell = foodGrid[i - 1][j - 1];
+					const size_t nwFoodCellSize = nwFoodCell.size();
+					for (size_t l = 0; l < nwFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], nwFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+
+				if (i > 0) // n cell
+				{
+					const Cell& nAnimalCell = animalGrid[i - 1][j];
+					const size_t nAnimalCellSize = nAnimalCell.size();
+					for (size_t l = 0; l < nAnimalCellSize; l++)
+					{
+						animalOnAnimalCollision(cell[k], nAnimalCell[l], combatMultiplier, gameData);
+					}
+
+					const Cell& nFoodCell = foodGrid[i - 1][j];
+					const size_t nFoodCellSize = nFoodCell.size();
+					for (size_t l = 0; l < nFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], nFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+
+				if (j > 0) // w cell
+				{
+					const Cell& wAnimalCell = animalGrid[i][j - 1];
+					const size_t wAnimalCellSize = wAnimalCell.size();
+					for (size_t l = 0; l < wAnimalCellSize; l++)
+					{
+						animalOnAnimalCollision(cell[k], wAnimalCell[l], combatMultiplier, gameData);
+					}
+
+					const Cell& wFoodCell = foodGrid[i][j - 1];
+					const size_t wFoodCellSize = wFoodCell.size();
+					for (size_t l = 0; l < wFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], wFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+				
+				if (i > 0 && j + 1 < cellCount) // ne cell
+				{
+					const Cell& neFoodCell = foodGrid[i - 1][j + 1];
+					const size_t neFoodCellSize = neFoodCell.size();
+					for (size_t l = 0; l < neFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], neFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+
+				if (j + 1 < cellCount) // e cell
+				{
+					const Cell& eFoodCell = foodGrid[i][j + 1];
+					const size_t eFoodCellSize = eFoodCell.size();
+					for (size_t l = 0; l < eFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], eFoodCell[l], foodMultiplier, gameData);
+					}
+
+				}
+
+				if (j + 1 < cellCount && i + 1 < cellCount) // se cell
+				{
+					const Cell& seFoodCell = foodGrid[i + 1][j + 1];
+					const size_t seFoodCellSize = seFoodCell.size();
+					for (size_t l = 0; l < seFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], seFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+
+				if (i + 1 < cellCount) // s cell
+				{
+					const Cell& sFoodCell = foodGrid[i + 1][j];
+					const size_t sFoodCellSize = sFoodCell.size();
+					for (size_t l = 0; l < sFoodCellSize; l++)
+					{
+						animalOnFoodCollision(cell[k], sFoodCell[l], foodMultiplier, gameData);
+					}
+				}
+			}
 		}
 	}
 }

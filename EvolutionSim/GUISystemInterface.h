@@ -1,13 +1,8 @@
 #pragma once
-
+#include <chrono>
 #include <Window.h>
 #include <GameState.h>
-
-class BeingMAnager;
-class DataPointManager;
-class GenerationManager;
-class OverlayConfig;
-class SelectedTracker;
+struct GameData;
 
 template <class Implementation>
 class GUISystemInterface
@@ -19,10 +14,9 @@ public:
 		system.init(wndw);
 	}
 
-	static void update(BeingManager& beings, DataPointManager& data, GenerationManager& generation, OverlayConfig& overlayConfig, SelectedTracker& selected, TextureLibrary& textureLibrary, SolengineV2::Window& window, SolengineV2::GameState& state, unsigned int deltaTime)
+	static void update(SolengineV2::Window& window, SolengineV2::GameState& state, const std::chrono::microseconds& deltaTime, GameData& gameData)
 	{
 		static Implementation system;
-		system.update(beings, data, generation, overlayConfig, selected, textureLibrary, window, state, deltaTime);
+		system.update(window, state, deltaTime, gameData);
 	}
 };
-

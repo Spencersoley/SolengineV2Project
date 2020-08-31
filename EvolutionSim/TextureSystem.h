@@ -1,8 +1,6 @@
 #pragma once
 #include <array>
 #include "TextureComponent.h"
-#include "TextureLibrary.h"
-
 namespace SolengineV2
 {
 	class IOManager;
@@ -11,5 +9,7 @@ namespace SolengineV2
 class TextureSystem
 {
 public:
-	static void loadTextures(SolengineV2::IOManager& ioManager, TextureLibrary& textureLibrary);
+	static void loadTextures(SolengineV2::IOManager& ioManager, GameData& gameData);
+
+	static SolengineV2::Texture& getTexture(TextureLibraryEntity::Texture component, GameData& gameData);
 };

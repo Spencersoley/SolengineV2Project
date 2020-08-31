@@ -1,5 +1,6 @@
 #pragma once
 #include "TransformComponent.h"
+struct GameData;
 
 template <class Implementation>
 class TransformSystemInterface

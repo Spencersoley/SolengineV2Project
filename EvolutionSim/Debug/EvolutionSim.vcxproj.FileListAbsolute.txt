@@ -1,2 +1,4 @@
 C:\Users\Ssole\Documents\Visual Studio 2019\Projects\SolengineV2Project-master\EvolutionSim\Debug\EvolutionSim.exe
 C:\Users\Ssole\Documents\Visual Studio 2019\Projects\SolengineV2Project-master\EvolutionSim\Debug\EvolutionSim.pdb
+C:\Users\Ssole\Documents\Visual Studio 2019\Projects\SolengineV2Project\EvolutionSim\Debug\EvolutionSim.exe
+C:\Users\Ssole\Documents\Visual Studio 2019\Projects\SolengineV2Project\EvolutionSim\Debug\EvolutionSim.pdb

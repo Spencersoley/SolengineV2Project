@@ -1,11 +1,9 @@
 #pragma once
 #include <Vertex.h>
-
-class BeingManager;
-class OverlayConfig;
+struct GameData;
 
 class OverlaySystem
 {
 public:
-	void updateOverlay(BeingManager& beings, OverlayConfig& overlayConfig) const;
+	void updateOverlay(GameData& gameData) const;
 };

@@ -1,23 +1,22 @@
 ﻿#pragma once
 #include <set>
-
-#include "ArenaSize.h"
-
-class BeingManager;
-class DataPointManager;
-class GenerationManager;
-class SelectedTracker;
-class TextureLibrary;
+#include <chrono>
+#include "Handle.h"
+struct GameData;
+struct BeingEntity;
+namespace SolengineV2
+{
+	class RandomNumberGenerator;
+}
 
 class GenerationSystem
 {
-	using Handle = unsigned int;
-
 public:
-	void begin(BeingManager& beings, GenerationManager& generation, SelectedTracker& selected, TextureLibrary& textureLibrary);
-	void update(BeingManager& beings, DataPointManager& data, GenerationManager& generation, OverlayConfig& overlayConfig, SelectedTracker& selected, TextureLibrary& textureLibrary, std::set<Handle>& handlesToDelete);
+	void begin(GameData& gameData, SolengineV2::RandomNumberGenerator& rng) const;
+	void update(GameData& gameData, SolengineV2::RandomNumberGenerator& rng, const std::chrono::microseconds& deltaTime) const;
 
 private:
-	void newWave(BeingManager& beings, DataPointManager& data, GenerationManager& generation, OverlayConfig& overlayConfig, SelectedTracker& selected, TextureLibrary& textureLibrary);
-};
+	void newWave(GameData& gameData, SolengineV2::RandomNumberGenerator& rng) const;
 
+	void killAnimal(BeingEntity& being, Handle handle, GameData& gameData) const;
+};

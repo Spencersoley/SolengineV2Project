@@ -5,7 +5,6 @@
 class SpriteComponent
 {
 	template <class T> friend class SpriteSystemInterface;
-
 	SolengineV2::Colour colour;
 	GLuint textureID{ 0 };
 	bool redraw{ true };

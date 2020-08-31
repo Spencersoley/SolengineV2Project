@@ -16,6 +16,7 @@ namespace SolengineV2
         {
             Init(windowName, sw, sh, col);
         }
+        Window() {}
         ~Window() {};
 
         int Init(std::string windowName, int sw, int sh, Colour col)
@@ -80,8 +81,8 @@ namespace SolengineV2
         SDL_Window* getWindow() { return sdlWindow; }
         SDL_GLContext& getContext() { return glContext; }
     private:
-        SDL_GLContext glContext;
+        SDL_GLContext glContext{};
         SDL_Window* sdlWindow = nullptr;
-        int screenWidth, screenHeight;
+        int screenWidth{}, screenHeight{};
     };
 }

@@ -1,19 +1,15 @@
 #pragma once
-#include <set>
-
-class BeingManager;
-class PartitionComponent;
-class GenerationManager;
-class TextureLibrary;
+#include <chrono>
+#include "Handle.h"
+struct GameData;
 
 template <class Implementation>
 class ColliderSystemInterface
 {
-	using Handle = unsigned int;
 public:
-	static void update(BeingManager& beings, PartitionComponent& partition, GenerationManager& generationManager, std::set<Handle>& handlesToDelete, unsigned int dt, TextureLibrary& textureLibrary)
+	static void update(const std::chrono::microseconds dt, GameData& gameData)
 	{
 		static Implementation system;
-		system.update(beings, partition, generationManager, handlesToDelete, dt, textureLibrary);
+		system.update(dt, gameData);
 	}
 };

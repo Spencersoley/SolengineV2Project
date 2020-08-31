@@ -8,7 +8,14 @@ namespace SolengineV2
 {
 	struct Square
 	{
-		Square()
+		std::vector<uint32_t> indices =
+		{ 
+			0, 1, 2, 3
+		};
+
+		unsigned int VBO{}, VAO{}, EBO{};
+
+		void Init()
 		{
 			glGenVertexArrays(1, &VAO);
 			glGenBuffers(1, &VBO);
@@ -16,13 +23,6 @@ namespace SolengineV2
 
 			glEnableVertexAttribArray(0);
 		}
-
-		std::vector<uint32_t> indices =
-		{ 
-			0, 1, 2, 3
-		};
-
-		unsigned int VBO, VAO, EBO;
 	};
 
 	struct Circle

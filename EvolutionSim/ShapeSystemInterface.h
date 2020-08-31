@@ -1,24 +1,24 @@
 #pragma once
 #include "ShapeComponent.h"
-
 namespace SolengineV2
 {
-	class Square;
+	struct Square;
 	class ShaderManager;
-	class ShaderProgram;
+	struct ShaderProgram;
 }
+struct GameData;
 
-class SelectionBox;
-class CameraManager;
 template <class Implementation>
 class ShapeSystemInterface
 {
 public:
 	static const SolengineV2::Square& getShape(const ShapeComponent& shape) { return shape.square; }
 
-	static void update(const SelectionBox& selectionBox, const CameraManager& camera, const SolengineV2::ShaderProgram& shaderProgram)
+	static const void initSquare(ShapeComponent& shape) { shape.square.Init(); }
+
+	static void update(const SolengineV2::ShaderProgram& shaderProgram, const GameData& gameData)
 	{
 		static Implementation system;
-		system.update(selectionBox, camera, shaderProgram);
+		system.update(shaderProgram, gameData);
 	};
 };

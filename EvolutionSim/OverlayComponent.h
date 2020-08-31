@@ -1,6 +1,18 @@
 #pragma once
 
-enum class OverlayMode { DEFAULT, STRENGTH, SPEED, STAMINA, DIET, HUNGER };
+enum class OverlayMode 
+{
+	DEFAULT, 
+	AGGRESSION, 
+	DIET, 
+	HEALTH, 
+	HUNGER, 
+	INTELLIGENCE, 
+	SPEED, 
+	STAMINA, 
+	STRENGTH, 
+	N_OF_MODES
+};
 
 class OverlayComponent
 {

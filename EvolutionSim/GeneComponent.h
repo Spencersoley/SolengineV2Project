@@ -1,10 +1,25 @@
 #pragma once
-#include <array>
-#include "GeneEnum.h"
+#include "AggressionTraitComponent.h"
+#include "DietTraitComponent.h"
+#include "HealthTraitComponent.h"
+#include "HungerTraitComponent.h"
+#include "IntelligenceTraitComponent.h"
+#include "SpeedTraitComponent.h"
+#include "StaminaTraitComponent.h"
+#include "StrengthTraitcomponent.h"
+#include "TriQueue.h"
 
 class GeneComponent
 {
 	template <class T> friend class GeneSystemInterface;
-	Gene::BeingType beingType{ Gene::BeingType::PLANT };
-	std::array<float, static_cast<int>(Gene::Trait::TRAIT_COUNT)> traits{ 0.5f, 0.5f, 0.5f, 0.5f, 0.5f };
+	// We could pack these better non-alphabetically
+	AggressionTraitComponent aggression;
+	DietTraitComponent diet;
+	HealthTraitComponent health;
+	HungerTraitComponent hunger;
+	IntelligenceTraitComponent intelligence;
+	SpeedTraitComponent speed;
+	StaminaTraitComponent stamina;
+	StrengthTraitComponent strength;
+	TriQueue<unsigned int> familyHistory;
 };

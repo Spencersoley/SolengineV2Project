@@ -1,33 +1,32 @@
 #pragma once
 #include "SelectedComponent.h"
+#include "Handle.h"
+struct GameData;
 
-class BeingManager;
-class SelectionBox;
-class SelectedTracker;
-
-template <class Implementation>
+template <class Specialization>
 class SelectableSystemInterface
 {
-	using Handle = unsigned int;
 public:
-	static void setHandle(SelectedComponent& selected, const Handle set) { selected.handle = set; }
-	static Handle getHandle(SelectedComponent& selected) { return selected.handle; }
+	static void setSelectedAnimalHandle(SelectedComponent& selected, const Handle set) { selected.beingHandle = set; }
+	static Handle getSelectedAnimalHandle(SelectedComponent& selected) { return selected.beingHandle; }
+	static void setFoodHandle(SelectedComponent& selected, const Handle set) { selected.foodHandle = set; }
+	static Handle getFoodHandle(SelectedComponent& selected) { return selected.foodHandle; }
 
-	static void processClick(const glm::vec2& mouseCoords, BeingManager& beings, SelectedTracker& selectedTracker)
+	static void processClick(const glm::vec2& mouseCoords, GameData& gameData)
 	{
-		static Implementation system;
-		system.processClick(mouseCoords, beings, selectedTracker);
+		static Specialization system;
+		system.processClick(mouseCoords, gameData);
 	}
 
-	static void update(const BeingManager& beings, SelectionBox& selectionBox, SelectedTracker& selectedTracker)
+	static void update(GameData& gameData)
 	{
-		static Implementation system;
-		system.update(beings, selectionBox, selectedTracker);
+		static Specialization system;
+		system.update(gameData);
 	}
 
 	static void clearSelectedHandle(SelectedComponent& selected)
 	{
-		static Implementation system;
+		static Specialization system;
 		system.clearSelectedHandle(selected);
 	}
 };

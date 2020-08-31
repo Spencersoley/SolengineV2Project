@@ -1,20 +1,17 @@
 #pragma once
 #include "OverlayComponent.h"
-
-class BeingManager;
-class OverlayConfig;
+struct GameData;
 
 template <class Implementation>
 class OverlaySystemInterface
 {
 public:
-	static OverlayMode getOverlay(const OverlayComponent& overlay) { return overlay.mode; }
+	static OverlayMode getOverlayMode(const OverlayComponent& overlay) { return overlay.mode; }
 	static void setOverlay(OverlayComponent& overlay, OverlayMode set) { overlay.mode = set; }
 
-	static void updateOverlay(BeingManager& beings, OverlayConfig& overlayConfig)
+	static void updateOverlay(GameData& gameData)
 	{
 		static Implementation system;
-		system.updateOverlay(beings, overlayConfig);
+		system.updateOverlay(gameData);
 	};
 };
-

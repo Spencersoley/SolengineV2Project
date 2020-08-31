@@ -1,26 +1,34 @@
 #pragma once
 #include "Grid.h"
 #include "PartitionComponent.h"
-
-class BeingManager;
+struct GameData;
 
 template <class Implementation>
 class PartitionSystemInterface
 {
 public:
-	static Grid& getGrid(PartitionComponent& component) { return component.grid; }
+	static Grid& getAnimalGrid(PartitionComponent& component) { return component.animalGrid; }
+	static Grid& getFoodGrid(PartitionComponent& component) { return component.foodGrid; }
 
-	static void setGrid(PartitionComponent& component, Grid&& grid) { component.grid = grid; }
+	static void setAnimalGrid(PartitionComponent& component, Grid grid) 
+	{
+		component.animalGrid = grid; 
+	}	
+	
+	static void setFoodGrid(PartitionComponent& component, Grid grid) 
+	{
+		component.foodGrid = grid; 
+	}
 
-	static void update(BeingManager& beings, PartitionComponent& component)
+	static void update(GameData& gameData)
 	{
 		static Implementation system;
-		system.update(beings, component);
+		system.update(gameData);
 	}
 	
-	static void setupGrid(PartitionComponent& component)
+	static void setupGrid(PartitionComponent& component, GameData& gameData)
 	{
 		static Implementation system;
-		system.setupGrid(component);
+		system.setupGrid(component, gameData);
 	}
 };

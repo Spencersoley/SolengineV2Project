@@ -31,8 +31,10 @@ namespace SolengineV2
 	public:
 		SpriteBatch() : vbo(0), vao(0)
 		{
-			createVertexArray();
+			
 		};
+
+		void Init() { createVertexArray(); }
 
 		void Dispose()
 		{

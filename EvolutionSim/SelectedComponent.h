@@ -1,9 +1,10 @@
 #pragma once
 #include <climits>
+#include "Handle.h"
 
 class SelectedComponent
 {
-	using Handle = unsigned int;
 	template <class T> friend class SelectableSystemInterface;
-	Handle handle{ UINT_MAX };
+	Handle beingHandle{ UINT_MAX };
+	Handle foodHandle{ UINT_MAX };
 };

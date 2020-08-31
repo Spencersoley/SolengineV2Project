@@ -12,9 +12,6 @@ public:
 
 private:
 	template <class T> friend class SurvivalSystemInterface;
-
-	float fullness{ 0.0f };
-	float energy{ 0.0f };
 	SurvivalState state{ SurvivalState::AWAITING };
-	bool isAlive{ true };
+	bool isPoisoned{ false };
 };

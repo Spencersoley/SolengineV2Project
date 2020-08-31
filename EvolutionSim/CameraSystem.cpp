@@ -1,9 +1,8 @@
 #include <algorithm>
-
 #include "Sceensize.h"
-
-#include "TransformSystemImplementation.h"
-#include "CameraSystemImplementation.h"
+#include "TransformSystemSpecialization.h"
+#include "CameraSystemSpecialization.h"
+#include "GameData.h"
 
 constexpr float MAX_SCALE{ 10.0f };
 constexpr float MIN_SCALE{ 0.2f };
@@ -24,21 +23,21 @@ void CameraSystem::zoom(CameraComponent& component, float zoom)
 	Camera::System::setScale(component, scale);
 }
 
-void CameraSystem::updateCameraMatrices(CameraComponent& component, const TransformComponent& cameraTransform) const
+void CameraSystem::updateCameraMatrices(GameData& gameData) const
 {
-	const glm::vec2& currentCameraPosition = Transform::System::getPos(cameraTransform);
-	if (Camera::System::getHasMoved(component))
+	const glm::vec2& currentCameraPosition = Transform::System::getPos(gameData.camera.transform);
+	if (Camera::System::getHasMoved(gameData.camera.cam))
 	{
 		const glm::vec3 translationVec = { ((float)SCREEN_WIDTH / 2.0f) - currentCameraPosition.x, ((float)SCREEN_HEIGHT / 2.0f) - currentCameraPosition.y, 0.0f };
 		const glm::mat4 pMatrix = glm::translate(ORTHO_MATRIX, translationVec);
-		float cameraScale = Camera::System::getScale(component);
+		float cameraScale = Camera::System::getScale(gameData.camera.cam);
 		const glm::vec3 scaleVec(cameraScale, cameraScale, 1.0f);
-		Camera::System::setProjectionMatrix(component, (glm::scale(glm::mat4(1.0f), scaleVec) * pMatrix));
-		Camera::System::setHasMoved(component, false);
+		Camera::System::setProjectionMatrix(gameData.camera.cam, (glm::scale(glm::mat4(1.0f), scaleVec) * pMatrix));
+		Camera::System::setHasMoved(gameData.camera.cam, false);
 	}
 }
 
-glm::vec2 CameraSystem::convertScreenToWorld(const CameraComponent& camera, const TransformComponent& cameraTransform, const glm::vec2& screenCoords) const
+glm::vec2 CameraSystem::convertScreenToWorld(const GameData& gameData, const glm::ivec2& screenCoords) const
 {
 	glm::vec2 coords = screenCoords;
 	//Invert Y direction
@@ -46,8 +45,8 @@ glm::vec2 CameraSystem::convertScreenToWorld(const CameraComponent& camera, cons
 	//Converts 0 to centre
 	coords -= glm::vec2{ SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 	//Scale the coordinates
-	coords /= Camera::System::getScale(camera);
+	coords /= Camera::System::getScale(gameData.camera.cam);
 	//Translate with camera;
-	coords += Transform::System::getPos(cameraTransform);
+	coords += Transform::System::getPos(gameData.camera.transform);
 	return coords;
 }

@@ -1,13 +1,10 @@
 #pragma once
 #include "Grid.h"
-
-class BeingManager;
-class PartitionComponent;
+struct GameData;
 
 class SpatialPartitionSystem
 {
 public:
-	void update(BeingManager& beings, PartitionComponent& grid);
-
-	void setupGrid(PartitionComponent& grid);
+	void update(GameData& gameData) const;
+	void setupGrid(PartitionComponent& component, GameData& gameData) const;
 };
