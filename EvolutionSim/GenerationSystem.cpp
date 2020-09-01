@@ -64,7 +64,7 @@ void GenerationSystem::begin(GameData& gameData, SolengineV2::RandomNumberGenera
 	}
 
 	Manager<FoodEntity>& foodManager = gameData.foodManager;
-	size_t initialFoodCount = gameData.configurableSettings.foodPerGeneration.get();
+	float initialFoodCount = gameData.configurableSettings.foodPerGeneration.get();
 	gameData.foodManager.setToSize(initialFoodCount);
 
 	float plantSaturation = gameData.configurableSettings.plantSaturation.get();
@@ -79,7 +79,7 @@ void GenerationSystem::begin(GameData& gameData, SolengineV2::RandomNumberGenera
 	};
 
 	Generation::System::setAnimalCount(generationComponent, INITIAL_ANIMAL_COUNT);
-	Generation::System::setPlantCount(generationComponent, initialFoodCount);
+	Generation::System::setPlantCount(generationComponent, static_cast<int>(initialFoodCount));
 }
 
 void GenerationSystem::update(GameData& gameData, SolengineV2::RandomNumberGenerator& rng, const std::chrono::microseconds& deltaTime) const
@@ -221,7 +221,7 @@ void GenerationSystem::newWave(GameData& gameData, SolengineV2::RandomNumberGene
 
 	/// ADDITIONAL FOOD
 	GenerationComponent& generationComponent = gameData.generation.component;
-	size_t foodPerGeneration = gameData.configurableSettings.foodPerGeneration.get();
+	int foodPerGeneration = static_cast<int>(gameData.configurableSettings.foodPerGeneration.get());
 	size_t totalFoodSize = foodSize + foodPerGeneration;
 	foodManager.resize(totalFoodSize);
 	plantCount += foodPerGeneration;
@@ -304,7 +304,7 @@ void GenerationSystem::killAnimal(BeingEntity& being, Handle beingHandle, GameDa
 	Food::System::setFoodType(food.food, FoodType::MEAT);
 
 	auto& pos = Transform::System::getPos(being.transform); // boundary for food spawning
-	if (float distanceOutOfBounds = glm::distance(pos, { 0, 0 }) - ((gameData.configurableSettings.arenaDiameter.get() * 0.95) / 2.0f); distanceOutOfBounds > 0)
+	if (float distanceOutOfBounds = glm::distance(pos, { 0.0f, 0.0f }) - ((gameData.configurableSettings.arenaDiameter.get() * 0.95f) / 2.0f); distanceOutOfBounds > 0.0f)
 	{
 		Transform::System::setPos(foodPool.back().transform, pos - (glm::normalize(pos) * distanceOutOfBounds));
 	}

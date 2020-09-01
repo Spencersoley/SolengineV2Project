@@ -79,7 +79,7 @@ void GUISystem::init(SolengineV2::Window& wndw)
 void GUISystem::update(SolengineV2::Window& window, SolengineV2::GameState& state, const std::chrono::microseconds& deltaTime, GameData& gameData)
 {
 	static unsigned int microsecondsFromLastUpdate = 0;
-	microsecondsFromLastUpdate += static_cast<float>(deltaTime.count());
+	microsecondsFromLastUpdate += static_cast<unsigned int>(deltaTime.count());
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window.getWindow());
@@ -87,9 +87,6 @@ void GUISystem::update(SolengineV2::Window& window, SolengineV2::GameState& stat
 	if (microsecondsFromLastUpdate > MICROSECONDS_PER_UPDATE)
 	{
 		ImGui::NewFrame();
-
-		//bool f = true;
-		//ImPlot::ShowDemoWindow(&f);
 
 		/// CONTOL PANEL ///
 		if (ImGui::Begin("Control Panel"))

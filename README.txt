@@ -1,0 +1,1 @@
+This folder contains everything in order to run EvoSim straight out of the box. SolengineV2 is simply a small static library used by EvoSim. 

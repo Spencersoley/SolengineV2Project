@@ -421,9 +421,6 @@
     <ClCompile Include="implot.cpp">
       <Filter>Source Files\Imgui</Filter>
     </ClCompile>
-    <ClCompile Include="implot_demo.cpp">
-      <Filter>Source Files\Imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Sceensize.h">
       <Filter>Source Files\Core</Filter>
     </ClCompile>

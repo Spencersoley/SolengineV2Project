@@ -65,8 +65,8 @@ private:
 
 		SolengineV2::IOManager         ioManager;
 		SolengineV2::ShaderCreator     shaderCreator(ioManager);
-		shaderCreator.createShader(shaders.colourShading, "Shaders/colourShading.vert", "Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
-		shaderCreator.createShader(shaders.simpleGeometry, "Shaders/simpleGeometry.vert", "Shaders/simpleGeometry.frag", { "aPos" });
+		shaderCreator.createShader(shaders.colourShading, "../deps/include/Shaders/colourShading.vert", "../deps/include/Shaders/colourShading.frag", { "vertexPosition", "vertexColour", "vertexUV" });
+		shaderCreator.createShader(shaders.simpleGeometry, "../deps/include/Shaders/simpleGeometry.vert", "../deps/include/Shaders/simpleGeometry.frag", { "aPos" });
 		TextureLoader::System::loadTextures(ioManager, gameData);
 
 		GUI::System::init(window);
