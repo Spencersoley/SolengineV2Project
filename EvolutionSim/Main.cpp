@@ -60,7 +60,7 @@ private:
 	{
 		SolengineV2::initialiseSDL();
 		window.Init("SolengineV2", SCREEN_WIDTH, SCREEN_HEIGHT, SolengineV2::Colour(0, 0, 0, 255));
-		timeManager.Init(100000, SolengineV2::TimerMode::LIFETIME_AVERAGE);
+		timeManager.Init(100000, SolengineV2::TimerMode::NONE);
 		spriteBatch.Init();
 
 		SolengineV2::IOManager         ioManager;
